@@ -23,7 +23,7 @@
             <i class="fas fa-edit me-1"></i>
             Edit Server
         </button>
-        <button class="btn btn-primary">
+        <button class="btn btn-primary" onclick="forceHealthCheck({{ $server->id }})">
             <i class="fas fa-sync me-1"></i>
             Force Check
         </button>
@@ -123,7 +123,7 @@
                                     </span>
                                 </div>
                                 @if($latestReport->supervisor_data)
-                                    @php $supervisorData = json_decode($latestReport->supervisor_data, true); @endphp
+                                    @php $supervisorData = $latestReport->supervisor_data; @endphp
                                     <small class="text-muted">
                                         {{ $supervisorData['total_processes'] ?? 0 }} processes,
                                         {{ $supervisorData['running_processes'] ?? 0 }} running
@@ -143,7 +143,7 @@
                                     </span>
                                 </div>
                                 @if($latestReport->cron_data)
-                                    @php $cronData = json_decode($latestReport->cron_data, true); @endphp
+                                    @php $cronData = $latestReport->cron_data; @endphp
                                     <small class="text-muted">
                                         {{ count($cronData['jobs'] ?? []) }} jobs configured
                                     </small>
@@ -162,7 +162,7 @@
                                     </span>
                                 </div>
                                 @if($latestReport->queue_data)
-                                    @php $queueData = json_decode($latestReport->queue_data, true); @endphp
+                                    @php $queueData = $latestReport->queue_data; @endphp
                                     <small class="text-muted">
                                         {{ $queueData['healthy_queues'] ?? 0 }}/{{ $queueData['total_queues'] ?? 0 }} healthy
                                     </small>
@@ -364,6 +364,56 @@ function resolveAlert(alertId) {
             alert('Failed to resolve alert');
         });
     }
+}
+
+function forceHealthCheck(serverId) {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Checking...';
+
+    fetch(`/dashboard/servers/${serverId}/force-check`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            button.innerHTML = '<i class="fas fa-check me-1"></i>Triggered!';
+            button.className = 'btn btn-success';
+
+            // Show notification
+            alert(data.message);
+
+            // Reset button after 3 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = originalContent;
+                button.className = 'btn btn-primary';
+            }, 3000);
+
+            // Optionally reload page after 5 seconds to show new data
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        } else {
+            alert('Error: ' + data.message);
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to trigger health check. Please try again.');
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
 }
 </script>
 @endpush

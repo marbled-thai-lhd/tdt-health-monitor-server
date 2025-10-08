@@ -175,7 +175,7 @@ class HealthReportService
         $servers = Server::with(['latestHealthReport', 'unresolvedAlerts'])
             ->get()
             ->map(function ($server) {
-                $latestReport = $server->latestHealthReport();
+                $latestReport = $server->latestHealthReport;
 
                 return [
                     'id' => $server->id,

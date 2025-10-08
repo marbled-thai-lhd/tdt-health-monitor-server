@@ -58,6 +58,23 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="base_url" class="form-label">Base URL <span class="text-danger">*</span></label>
+                        <input type="url"
+                               class="form-control @error('base_url') is-invalid @enderror"
+                               id="base_url"
+                               name="base_url"
+                               value="{{ old('base_url') }}"
+                               placeholder="e.g., https://myserver.com or http://192.168.1.10:8080"
+                               required>
+                        @error('base_url')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="form-text text-muted">
+                            The base URL where the server can be accessed (required for force health checks)
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
                         <textarea class="form-control @error('description') is-invalid @enderror"
                                   id="description"

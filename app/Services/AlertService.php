@@ -208,7 +208,7 @@ class AlertService
             ->get();
 
         foreach ($staleAlerts as $alert) {
-            $latestReport = $alert->server->latestHealthReport();
+            $latestReport = $alert->server->latestHealthReport;
 
             if ($latestReport && $latestReport->overall_status === 'healthy') {
                 $alert->resolve('Auto-resolved: issue no longer present in latest reports');

@@ -13,6 +13,7 @@ Route::get('/dashboard/servers/create', [DashboardController::class, 'createServ
 Route::post('/dashboard/servers', [DashboardController::class, 'storeServer'])->name('dashboard.servers.store');
 Route::get('/dashboard/servers/{server}/setup', [DashboardController::class, 'setupServer'])->name('dashboard.servers.setup');
 Route::get('/dashboard/servers/{server}', [DashboardController::class, 'serverDetail'])->name('dashboard.server-detail');
+Route::post('/dashboard/servers/{server}/force-check', [DashboardController::class, 'forceHealthCheck'])->name('dashboard.servers.force-check');
 
 // Alert routes
 Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');

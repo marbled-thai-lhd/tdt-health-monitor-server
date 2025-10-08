@@ -9,6 +9,7 @@ use App\Services\AlertService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -69,6 +70,7 @@ class DashboardController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:servers,name',
             'ip_address' => 'nullable|ip',
+            'base_url' => 'required|url|max:255',
             'description' => 'nullable|string|max:1000',
             'environment' => 'nullable|in:production,staging,development,testing',
             'api_key' => 'required|string|min:16|unique:servers,api_key',
@@ -135,5 +137,54 @@ class DashboardController extends Controller
         $alert->resolve($request->input('resolution_notes'));
 
         return back()->with('success', 'Alert resolved successfully.');
+    }
+
+    /**
+     * Force a health check for a specific server
+     */
+    public function forceHealthCheck(Server $server)
+    {
+        try {
+            // Create a force check request to the monitored server
+            $client = new \GuzzleHttp\Client(['timeout' => 30]);
+
+            // The monitored server should have an endpoint to trigger immediate health check
+            $forceCheckUrl = $server->base_url . '/health-monitor/force-check';
+
+            $response = $client->post($forceCheckUrl, [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-Key' => $server->api_key,
+                ],
+                'json' => [
+                    'timestamp' => time(),
+                    'force_check' => true
+                ]
+            ]);
+
+            if ($response->getStatusCode() === 200) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Health check triggered successfully. Report should arrive within 1-2 minutes.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to trigger health check on server.'
+            ], 500);
+
+        } catch (\Exception $e) {
+            Log::error('Force health check failed', [
+                'server_id' => $server->id,
+                'server_name' => $server->name,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to connect to server: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

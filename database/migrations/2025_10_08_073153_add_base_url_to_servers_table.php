@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('servers', function (Blueprint $table) {
-            $table->string('ip_address')->nullable()->change();
+            $table->string('base_url')->nullable()->after('ip_address');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('servers', function (Blueprint $table) {
-            $table->string('ip_address')->nullable(false)->change();
+            $table->dropColumn('base_url');
         });
     }
 };

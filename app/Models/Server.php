@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Server extends Model
@@ -13,6 +14,7 @@ class Server extends Model
     protected $fillable = [
         'name',
         'ip_address',
+        'base_url',
         'api_key',
         'status',
         'last_seen_at',
@@ -45,14 +47,13 @@ class Server extends Model
     }
 
     /**
-     * Get the latest health report
+     * Get the latest health report relationship
      */
     public function latestHealthReport()
     {
-        return $this->healthReports()
+        return $this->hasOne(HealthReport::class)
                    ->where('report_type', 'health_check')
-                   ->latest('reported_at')
-                   ->first();
+                   ->latest('reported_at');
     }
 
     /**
