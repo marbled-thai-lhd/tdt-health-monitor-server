@@ -11,3 +11,4 @@ Route::get('/user', function (Request $request) {
 // Health monitoring API routes
 Route::post('health-report', [HealthReportController::class, 'store'])->name('api.health-report');
 Route::post('backup-notification', [HealthReportController::class, 'backupNotification'])->name('api.backup-notification');
+Route::post('force-check/{server}', [HealthReportController::class, 'forceCheck'])->name('api.force-check');

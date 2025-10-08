@@ -118,7 +118,8 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-cogs fa-lg text-primary me-2"></i>
                                     <h6 class="mb-0">Supervisor</h6>
-                                    <span class="badge status-badge status-{{ $latestReport->supervisor_status }} ms-auto">
+                                    <span class="badge status-badge status-{{ $latestReport->supervisor_status }} ms-auto"
+                                          title="Supervisor processes: {{ $latestReport->supervisor_status }}">
                                         {{ ucfirst($latestReport->supervisor_status) }}
                                     </span>
                                 </div>
@@ -138,7 +139,8 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-clock fa-lg text-warning me-2"></i>
                                     <h6 class="mb-0">Cron Jobs</h6>
-                                    <span class="badge status-badge status-{{ $latestReport->cron_status }} ms-auto">
+                                    <span class="badge status-badge status-{{ $latestReport->cron_status }} ms-auto"
+                                          title="Cron job monitoring: {{ $latestReport->cron_status }}">
                                         {{ ucfirst($latestReport->cron_status) }}
                                     </span>
                                 </div>
@@ -157,7 +159,8 @@
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-list fa-lg text-info me-2"></i>
                                     <h6 class="mb-0">Queues</h6>
-                                    <span class="badge status-badge status-{{ $latestReport->queue_status }} ms-auto">
+                                    <span class="badge status-badge status-{{ $latestReport->queue_status }} ms-auto"
+                                          title="Queue health check: {{ $latestReport->queue_status }}">
                                         {{ ucfirst($latestReport->queue_status) }}
                                     </span>
                                 </div>
@@ -207,22 +210,26 @@
                                             <small>{{ $report->created_at->format('M d H:i') }}</small>
                                         </td>
                                         <td>
-                                            <span class="badge status-badge status-{{ $report->supervisor_status }}">
+                                            <span class="badge status-badge status-{{ $report->supervisor_status }}"
+                                                  title="Supervisor {{ $report->supervisor_status }}">
                                                 {{ ucfirst($report->supervisor_status) }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge status-badge status-{{ $report->cron_status }}">
+                                            <span class="badge status-badge status-{{ $report->cron_status }}"
+                                                  title="Cron jobs {{ $report->cron_status }}">
                                                 {{ ucfirst($report->cron_status) }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge status-badge status-{{ $report->queue_status }}">
+                                            <span class="badge status-badge status-{{ $report->queue_status }}"
+                                                  title="Queue system {{ $report->queue_status }}">
                                                 {{ ucfirst($report->queue_status) }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge status-badge status-{{ $report->overall_status }}">
+                                            <span class="badge status-badge status-{{ $report->overall_status }}"
+                                                  title="Overall system {{ $report->overall_status }}">
                                                 {{ ucfirst($report->overall_status) }}
                                             </span>
                                         </td>

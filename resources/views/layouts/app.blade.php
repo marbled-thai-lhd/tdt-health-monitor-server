@@ -37,11 +37,41 @@
         .status-badge {
             font-size: 0.75rem;
             padding: 0.25rem 0.5rem;
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: help;
+            transition: all 0.2s ease;
         }
-        .status-healthy { background-color: #28a745; }
-        .status-warning { background-color: #ffc107; }
-        .status-critical { background-color: #dc3545; }
-        .status-offline { background-color: #6c757d; }
+        .status-badge:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .status-healthy,
+        .status-ok {
+            background-color: #28a745;
+            box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.2);
+        }
+        .status-warning {
+            background-color: #ffc107;
+            color: #000;
+            box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.2);
+        }
+        .status-critical,
+        .status-error {
+            background-color: #dc3545;
+            box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
+        }
+        .status-unhealthy {
+            background-color: #fd7e14;
+            box-shadow: 0 0 0 1px rgba(253, 126, 20, 0.2);
+        }
+        .status-offline,
+        .status-no_processes {
+            background-color: #6c757d;
+            box-shadow: 0 0 0 1px rgba(108, 117, 125, 0.2);
+        }
 
         .card-stat {
             transition: transform 0.2s;

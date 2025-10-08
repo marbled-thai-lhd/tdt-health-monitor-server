@@ -247,4 +247,79 @@ class HealthReportController extends Controller
             return false;
         }
     }
+
+    /**
+     * Force health check for a specific server
+     */
+    public function forceCheck(Server $server): JsonResponse
+    {
+        try {
+            // Check if server has force check URL configured
+            if (empty($server->force_check_url)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Force check URL not configured for this server'
+                ], 400);
+            }
+
+            // Make HTTP request to server's force check endpoint
+            $client = new \GuzzleHttp\Client(['timeout' => 30]);
+
+            try {
+                $response = $client->post($server->force_check_url, [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Accept' => 'application/json',
+                    ],
+                    'json' => [
+                        'trigger' => 'manual',
+                        'timestamp' => now()->toISOString(),
+                    ]
+                ]);
+
+                $responseData = json_decode($response->getBody()->getContents(), true);
+
+                // Log the force check request
+                Log::info('Force check initiated', [
+                    'server_id' => $server->id,
+                    'server_name' => $server->name,
+                    'response_status' => $response->getStatusCode(),
+                    'response_data' => $responseData
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Force check initiated successfully',
+                    'server' => $server->name,
+                    'response' => $responseData
+                ]);
+
+            } catch (\GuzzleHttp\Exception\RequestException $e) {
+                Log::error('Force check request failed', [
+                    'server_id' => $server->id,
+                    'server_name' => $server->name,
+                    'error' => $e->getMessage(),
+                    'url' => $server->force_check_url
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to connect to server for force check',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Force check failed', [
+                'server_id' => $server->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Force check failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
