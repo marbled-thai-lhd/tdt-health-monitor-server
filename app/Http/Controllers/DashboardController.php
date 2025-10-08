@@ -54,6 +54,45 @@ class DashboardController extends Controller
     }
 
     /**
+     * Show create server form
+     */
+    public function createServer(): View
+    {
+        return view('dashboard.servers.create');
+    }
+
+    /**
+     * Store new server
+     */
+    public function storeServer(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:servers,name',
+            'ip_address' => 'nullable|ip',
+            'description' => 'nullable|string|max:1000',
+            'environment' => 'nullable|in:production,staging,development,testing',
+            'api_key' => 'required|string|min:16|unique:servers,api_key',
+            'is_active' => 'boolean'
+        ]);
+
+        $validated['is_active'] = $request->has('is_active');
+        $validated['status'] = 'offline'; // Default status
+
+        $server = Server::create($validated);
+
+        return redirect()->route('dashboard.servers.setup', $server)
+            ->with('success', 'Server created successfully! Follow the setup instructions below.');
+    }
+
+    /**
+     * Show setup instructions for a server
+     */
+    public function setupServer(Server $server): View
+    {
+        return view('dashboard.servers.setup', compact('server'));
+    }
+
+    /**
      * Show server detail
      */
     public function serverDetail(Server $server): View

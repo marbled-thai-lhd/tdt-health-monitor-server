@@ -3,8 +3,17 @@
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/servers', [DashboardController::class, 'servers'])->name('servers');
-Route::get('/servers/{server}', [DashboardController::class, 'serverDetail'])->name('server.detail');
-Route::get('/alerts', [DashboardController::class, 'alerts'])->name('alerts');
-Route::post('/alerts/{alert}/resolve', [DashboardController::class, 'resolveAlert'])->name('alert.resolve');
+// Dashboard routes
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
+Route::get('/dashboard', [DashboardController::class, 'index']);
+
+// Server routes
+Route::get('/dashboard/servers', [DashboardController::class, 'servers'])->name('dashboard.servers');
+Route::get('/dashboard/servers/create', [DashboardController::class, 'createServer'])->name('dashboard.servers.create');
+Route::post('/dashboard/servers', [DashboardController::class, 'storeServer'])->name('dashboard.servers.store');
+Route::get('/dashboard/servers/{server}/setup', [DashboardController::class, 'setupServer'])->name('dashboard.servers.setup');
+Route::get('/dashboard/servers/{server}', [DashboardController::class, 'serverDetail'])->name('dashboard.server-detail');
+
+// Alert routes
+Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');
+Route::post('/dashboard/alerts/{alert}/resolve', [DashboardController::class, 'resolveAlert'])->name('dashboard.resolve-alert');

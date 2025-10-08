@@ -17,11 +17,15 @@ class Server extends Model
         'status',
         'last_seen_at',
         'metadata',
+        'description',
+        'environment',
+        'is_active',
     ];
 
     protected $casts = [
         'last_seen_at' => 'datetime',
         'metadata' => 'array',
+        'is_active' => 'boolean',
     ];
 
     /**

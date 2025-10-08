@@ -9,7 +9,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 // Health monitoring API routes
-Route::prefix('health')->group(function () {
-    Route::post('report', [HealthReportController::class, 'store'])->name('health.report');
-    Route::post('backup-notification', [HealthReportController::class, 'backupNotification'])->name('health.backup-notification');
-});
+Route::post('health-report', [HealthReportController::class, 'store'])->name('api.health-report');
+Route::post('backup-notification', [HealthReportController::class, 'backupNotification'])->name('api.backup-notification');

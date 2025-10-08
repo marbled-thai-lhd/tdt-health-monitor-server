@@ -14,14 +14,18 @@ return new class extends Migration
         Schema::create('servers', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('ip_address');
-            $table->string('api_key')->nullable();
-            $table->enum('status', ['active', 'inactive', 'warning', 'error'])->default('active');
+            $table->string('ip_address')->nullable();
+            $table->text('description')->nullable();
+            $table->enum('environment', ['production', 'staging', 'development', 'testing'])->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->string('api_key')->unique();
+            $table->enum('status', ['healthy', 'warning', 'critical', 'offline'])->default('offline');
             $table->timestamp('last_seen_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
 
             $table->index(['status', 'last_seen_at']);
+            $table->index(['is_active', 'status']);
         });
     }
 
