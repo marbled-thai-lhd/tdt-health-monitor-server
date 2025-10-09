@@ -127,6 +127,23 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // Health Monitor Logging Channels
+        'health-check' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/health-check.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => env('HEALTH_LOG_DAILY_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
+
+        'database-backup' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/database-backup.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => env('BACKUP_LOG_DAILY_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];
