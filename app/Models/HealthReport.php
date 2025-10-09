@@ -63,7 +63,7 @@ class HealthReport extends Model
         if (!$this->supervisor_data) {
             return 'unknown';
         }
-        
+
         return $this->supervisor_data['status'] ?? 'unknown';
     }
 
@@ -75,7 +75,7 @@ class HealthReport extends Model
         if (!$this->cron_data) {
             return 'unknown';
         }
-        
+
         return $this->cron_data['status'] ?? 'unknown';
     }
 
@@ -87,7 +87,7 @@ class HealthReport extends Model
         if (!$this->queue_data) {
             return 'unknown';
         }
-        
+
         return $this->queue_data['status'] ?? 'unknown';
     }
 

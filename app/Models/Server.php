@@ -84,7 +84,7 @@ class Server extends Model
     {
         $statusMap = [
             'healthy' => 'healthy',  // healthy -> healthy
-            'warning' => 'warning',  // warning -> warning  
+            'warning' => 'warning',  // warning -> warning
             'error' => 'critical',   // error -> critical
         ];
 
