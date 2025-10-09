@@ -131,6 +131,7 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'type' => 'server_offline',
             'severity' => 'critical',
             'title' => "Server '{$server->name}' is offline",
@@ -151,6 +152,7 @@ class Alert extends Model
 
         return self::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'type' => 'supervisor_issue',
             'severity' => 'high',
             'title' => "Supervisor processes not running on '{$server->name}'",
@@ -168,6 +170,7 @@ class Alert extends Model
 
         return self::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'type' => 'queue_issue',
             'severity' => 'high',
             'title' => "Queue health issues on '{$server->name}'",
@@ -183,6 +186,7 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'type' => 'cron_issue',
             'severity' => 'medium',
             'title' => "Cron monitoring issue on '{$server->name}'",
@@ -197,6 +201,7 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'type' => 'backup_failed',
             'severity' => 'high',
             'title' => "Database backup failed on '{$server->name}'",

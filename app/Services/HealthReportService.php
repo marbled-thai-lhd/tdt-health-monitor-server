@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Server;
 use App\Models\HealthReport;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class HealthReportService
 {
@@ -46,6 +47,9 @@ class HealthReportService
             'overall_status' => $overallStatus,
             'reported_at' => Carbon::parse($reportData['timestamp']),
         ]);
+
+        // Update server status and last_seen_at based on health report
+        $this->updateServerStatus($server, $overallStatus);
 
         return $healthReport;
     }
@@ -278,5 +282,53 @@ class HealthReportService
         $cutoffDate = now()->subDays($retentionDays);
 
         return HealthReport::where('created_at', '<', $cutoffDate)->delete();
+    }
+
+    /**
+     * Update server status based on health report
+     */
+    protected function updateServerStatus(Server $server, string $overallStatus): void
+    {
+        try {
+            // Update last_seen_at to current time
+            $server->last_seen_at = now();
+
+            // Update server status based on overall health status
+            $server->status = $overallStatus;
+
+            $server->save();
+
+            Log::info('Server status updated', [
+                'server_id' => $server->id,
+                'server_name' => $server->name,
+                'new_status' => $overallStatus,
+                'last_seen_at' => $server->last_seen_at
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to update server status', [
+                'server_id' => $server->id,
+                'server_name' => $server->name,
+                'new_status' => $overallStatus,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Mark servers as offline if they haven't sent reports recently
+     */
+    public function markOfflineServers(): int
+    {
+        $threshold = config('monitoring.offline_threshold', 10); // minutes
+        $cutoffTime = now()->subMinutes($threshold);
+
+        $offlineCount = Server::where('status', '!=', 'offline')
+            ->where(function ($query) use ($cutoffTime) {
+                $query->whereNull('last_seen_at')
+                      ->orWhere('last_seen_at', '<', $cutoffTime);
+            })
+            ->update(['status' => 'offline']);
+
+        return $offlineCount;
     }
 }

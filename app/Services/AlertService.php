@@ -62,9 +62,6 @@ class AlertService
             if (!$existingAlert) {
                 $alert = Alert::createServerOfflineAlert($server);
                 $this->sendAlertNotification($alert);
-
-                // Update server status to error
-                $server->update(['status' => 'error']);
             }
         }
     }

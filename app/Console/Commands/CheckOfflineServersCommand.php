@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\AlertService;
+use App\Services\HealthReportService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -25,11 +26,17 @@ class CheckOfflineServersCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(AlertService $alertService): int
+    public function handle(AlertService $alertService, HealthReportService $healthReportService): int
     {
         $this->info('Checking for offline servers...');
 
         try {
+            // Mark servers as offline if they haven't sent reports recently
+            $offlineCount = $healthReportService->markOfflineServers();
+            if ($offlineCount > 0) {
+                $this->info("Marked {$offlineCount} servers as offline.");
+            }
+
             // Check for offline servers and create alerts
             $alertService->checkOfflineServers();
 
