@@ -210,7 +210,7 @@ class AlertService
         foreach ($staleAlerts as $alert) {
             $latestReport = $alert->server->latestHealthReport;
 
-            if ($latestReport && $latestReport->overall_status === 'healthy') {
+            if ($latestReport && $latestReport->overall_status === 'ok') {
                 $alert->resolve('Auto-resolved: issue no longer present in latest reports');
 
                 Log::info('Auto-resolved stale alert', [

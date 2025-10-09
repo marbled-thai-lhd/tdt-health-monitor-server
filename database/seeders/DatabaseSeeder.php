@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +11,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        \App\Models\Server::create([
+            'uuid' => '1bde9dd1-2166-493b-8db1-c23f8d9d3d6e',
+            'name' => 'aripla-local',
+            'ip_address' => '127.0.0.1',
+            'base_url' => 'http://127.0.0.1:8002',
+            'description' => null,
+            'environment' => 'development',
+            'is_active' => 1,
+            'api_key' => 'uT4LTGeZ2HrC17BZEtSqIBN1k8KgxyWB',
+            'status' => 'offline',
+            'last_seen_at' => null,
+            'metadata' => null,
+            'created_at' => '2025-10-09 03:45:37',
+            'updated_at' => '2025-10-09 03:45:37',
         ]);
     }
 }

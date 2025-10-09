@@ -83,15 +83,12 @@ class HealthReportService
             return 'unknown';
         }
 
-        // Priority: error > warning > offline > ok
+        // Priority: error > warning > ok
         if (in_array('error', $statuses)) {
             return 'error';
         }
         if (in_array('warning', $statuses)) {
             return 'warning';
-        }
-        if (in_array('offline', $statuses)) {
-            return 'offline';
         }
         if (in_array('ok', $statuses)) {
             return 'ok';
@@ -113,7 +110,7 @@ class HealthReportService
             'healthy', 'ok', 'good', 'running' => 'ok',
             'unhealthy', 'error', 'failed', 'critical', 'timeout' => 'error',
             'warning', 'degraded' => 'warning',
-            'offline', 'stopped', 'no_processes' => 'offline',
+            'offline', 'stopped', 'no_processes' => 'error',
             default => $status
         };
     }
@@ -161,7 +158,7 @@ class HealthReportService
 
         // Determine overall status
         if (empty($issues)) {
-            return 'healthy';
+            return 'ok';
         }
 
         // If there are supervisor or queue issues, it's an error
@@ -182,7 +179,7 @@ class HealthReportService
             return 'error';
         }
 
-        return 'healthy';
+        return 'ok';
     }
 
     /**
@@ -192,6 +189,7 @@ class HealthReportService
     {
         $totalServers = Server::count();
         $activeServers = Server::active()->count();
+        $okServers = Server::where('status', 'ok')->count();
         $offlineServers = Server::offline()->count();
         $serversWithIssues = Server::withIssues()->count();
 
@@ -200,23 +198,24 @@ class HealthReportService
             ->where('created_at', '>=', now()->subHours(24))
             ->count();
 
-        $healthyReports = HealthReport::healthChecks()
+        $okReports = HealthReport::healthChecks()
             ->where('created_at', '>=', now()->subHours(24))
-            ->where('overall_status', 'healthy')
+            ->where('overall_status', 'ok')
             ->count();
 
         return [
             'servers' => [
                 'total' => $totalServers,
                 'active' => $activeServers,
+                'ok_servers' => $okServers,
                 'offline' => $offlineServers,
                 'with_issues' => $serversWithIssues,
                 'health_percentage' => $totalServers > 0 ? round(($activeServers / $totalServers) * 100, 1) : 0,
             ],
             'reports_24h' => [
                 'total' => $recentReports,
-                'healthy' => $healthyReports,
-                'health_percentage' => $recentReports > 0 ? round(($healthyReports / $recentReports) * 100, 1) : 0,
+                'ok' => $okReports,
+                'health_percentage' => $recentReports > 0 ? round(($okReports / $recentReports) * 100, 1) : 0,
             ]
         ];
     }

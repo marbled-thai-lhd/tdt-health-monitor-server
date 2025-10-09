@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('environment', ['production', 'staging', 'development', 'testing'])->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('api_key')->unique();
-            $table->enum('status', ['healthy', 'warning', 'critical', 'offline'])->default('offline');
+            $table->enum('status', ['ok', 'warning', 'error', 'offline'])->default('offline');
             $table->timestamp('last_seen_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();

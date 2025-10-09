@@ -167,7 +167,7 @@
                                 @if($latestReport->queue_data)
                                     @php $queueData = $latestReport->queue_data; @endphp
                                     <small class="text-muted">
-                                        {{ $queueData['healthy_queues'] ?? 0 }}/{{ $queueData['total_queues'] ?? 0 }} healthy
+                                        {{ $queueData['ok_queues'] ?? 0 }}/{{ $queueData['total_queues'] ?? 0 }} ok
                                     </small>
                                 @endif
                             </div>

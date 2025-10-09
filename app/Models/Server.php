@@ -123,7 +123,7 @@ class Server extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'healthy');
+        return $query->where('status', 'ok');
     }
 
     /**
@@ -131,7 +131,7 @@ class Server extends Model
      */
     public function scopeWithIssues($query)
     {
-        return $query->whereIn('status', ['warning', 'critical']);
+        return $query->whereIn('status', ['warning', 'error']);
     }
 
     /**

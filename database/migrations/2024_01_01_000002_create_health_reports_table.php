@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('backup_status', 20)->nullable();
             $table->string('system_status', 20)->nullable();
             $table->json('metadata')->nullable();
-            $table->enum('overall_status', ['healthy', 'warning', 'error'])->default('healthy');
+            $table->string('overall_status', 20)->default('unknown');
             $table->timestamp('reported_at');
             $table->timestamps();
 

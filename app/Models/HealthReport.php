@@ -132,7 +132,7 @@ class HealthReport extends Model
     {
         // If overall_status is set, use it
         if (!empty($this->attributes['overall_status'])) {
-            return $this->attributes['overall_status'];
+            return $this->normalizeStatus($this->attributes['overall_status']);
         }
 
         // Otherwise calculate from component statuses
@@ -144,15 +144,12 @@ class HealthReport extends Model
             $this->system_status
         ];
 
-        // Priority: error > warning > offline > ok
+        // Priority: error > warning > ok
         if (in_array('error', $statuses)) {
             return 'error';
         }
         if (in_array('warning', $statuses)) {
             return 'warning';
-        }
-        if (in_array('offline', $statuses)) {
-            return 'offline';
         }
         if (in_array('ok', $statuses)) {
             return 'ok';
@@ -164,14 +161,14 @@ class HealthReport extends Model
     /**
      * Normalize status values to consistent format
      */
-        private function normalizeStatus(?string $status): string
+    private function normalizeStatus(?string $status): string
     {
         return match($status) {
             'healthy', 'ok', 'good', 'running' => 'ok',
             'unhealthy', 'error', 'failed', 'critical', 'timeout' => 'error',
             'warning', 'degraded' => 'warning',
-            'offline', 'stopped', 'no_processes' => 'offline',
-            default => $status
+            'offline', 'stopped', 'no_processes' => 'error',
+            default => $status ?? 'unknown'
         };
     }    /**
      * Get supervisor process issues
@@ -205,7 +202,7 @@ class HealthReport extends Model
      */
     public function getQueueIssues(): array
     {
-        if (!$this->queue_data || $this->queue_data['status'] === 'healthy') {
+        if (!$this->queue_data || in_array($this->queue_data['status'], ['ok', 'healthy'])) {
             return [];
         }
 
@@ -213,8 +210,8 @@ class HealthReport extends Model
 
         if (isset($this->queue_data['queues'])) {
             foreach ($this->queue_data['queues'] as $queueName => $queueData) {
-                if ($queueData['status'] !== 'healthy') {
-                    $severity = $queueData['status'] === 'timeout' ? 'high' : 'medium';
+                if (!in_array($queueData['status'], ['ok', 'healthy'])) {
+                    $severity = in_array($queueData['status'], ['timeout', 'error', 'failed']) ? 'high' : 'medium';
                     $issues[] = [
                         'type' => 'queue_unhealthy',
                         'queue' => $queueName,
@@ -267,15 +264,13 @@ class HealthReport extends Model
         $issues = $this->getAllIssues();
 
         if (empty($issues)) {
-            return 'healthy';
+            return 'ok';
         }
 
         $hasHighSeverity = collect($issues)->contains('severity', 'high');
         $hasCriticalSeverity = collect($issues)->contains('severity', 'critical');
 
-        if ($hasCriticalSeverity) {
-            return 'error';
-        } elseif ($hasHighSeverity) {
+        if ($hasCriticalSeverity || $hasHighSeverity) {
             return 'error';
         } else {
             return 'warning';

@@ -23,8 +23,8 @@
         <div class="card card-stat border-0 shadow-sm">
             <div class="card-body d-flex align-items-center">
                 <div class="flex-grow-1">
-                    <h5 class="card-title text-muted mb-1">Healthy Servers</h5>
-                    <h3 class="mb-0 text-success">{{ $statistics['healthy_servers'] ?? 0 }}</h3>
+                    <h5 class="card-title text-muted mb-1">OK Servers</h5>
+                    <h3 class="mb-0 text-success">{{ $statistics['ok_servers'] ?? 0 }}</h3>
                 </div>
                 <div class="text-success">
                     <i class="fas fa-check-circle fa-2x"></i>
@@ -136,7 +136,7 @@
                             <div class="col-md-4 col-lg-2 mb-3">
                                 <div class="server-card card h-100">
                                     <div class="card-body text-center p-3">
-                                        <i class="fas fa-server fa-2x mb-2 text-{{ $server->status === 'healthy' ? 'success' : ($server->status === 'offline' ? 'secondary' : 'warning') }}"></i>
+                                        <i class="fas fa-server fa-2x mb-2 text-{{ $server->status === 'ok' ? 'success' : ($server->status === 'offline' ? 'secondary' : 'warning') }}"></i>
                                         <h6 class="card-title mb-1">{{ $server->name }}</h6>
                                         <span class="badge status-badge status-{{ $server->status }}">
                                             {{ ucfirst($server->status) }}
@@ -172,9 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const healthData = @json($healthSummary ?? []);
 
     const statusCounts = {
-        healthy: 0,
+        ok: 0,
         warning: 0,
-        critical: 0,
+        error: 0,
         offline: 0
     };
 
@@ -187,12 +187,12 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Healthy', 'Warning', 'Critical', 'Offline'],
+            labels: ['OK', 'Warning', 'Error', 'Offline'],
             datasets: [{
                 data: [
-                    statusCounts.healthy,
+                    statusCounts.ok,
                     statusCounts.warning,
-                    statusCounts.critical,
+                    statusCounts.error,
                     statusCounts.offline
                 ],
                 backgroundColor: [

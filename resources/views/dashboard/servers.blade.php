@@ -62,7 +62,7 @@
                                     </div>
                                     <div class="col-4 text-center">
                                         <div class="small text-muted">Queue</div>
-                                        <i class="fas fa-{{ $server->latestHealthReport->queue_status === 'healthy' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
+                                        <i class="fas fa-{{ $server->latestHealthReport->queue_status === 'ok' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
                                     </div>
                                 </div>
                             </div>

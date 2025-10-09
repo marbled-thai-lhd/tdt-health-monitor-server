@@ -48,7 +48,6 @@
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        .status-healthy,
         .status-ok {
             background-color: #28a745;
             box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.2);
@@ -58,14 +57,9 @@
             color: #000;
             box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.2);
         }
-        .status-critical,
         .status-error {
             background-color: #dc3545;
             box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
-        }
-        .status-unhealthy {
-            background-color: #fd7e14;
-            box-shadow: 0 0 0 1px rgba(253, 126, 20, 0.2);
         }
         .status-offline,
         .status-no_processes {
