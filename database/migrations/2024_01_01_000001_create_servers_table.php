@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('servers', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('name')->unique();
             $table->string('ip_address')->nullable();
+            $table->string('base_url')->nullable();
             $table->text('description')->nullable();
             $table->enum('environment', ['production', 'staging', 'development', 'testing'])->nullable();
             $table->boolean('is_active')->default(true);
@@ -24,6 +26,7 @@ return new class extends Migration
             $table->json('metadata')->nullable();
             $table->timestamps();
 
+            $table->index('uuid');
             $table->index(['status', 'last_seen_at']);
             $table->index(['is_active', 'status']);
         });
