@@ -5,13 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Alert extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'uuid',
         'server_id',
+        'server_uuid',
         'type',
         'severity',
         'title',
@@ -29,17 +32,39 @@ class Alert extends Model
     ];
 
     /**
+     * Boot the model and generate UUID
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
+    /**
      * Get the server that owns this alert
      */
     public function server(): BelongsTo
     {
-        return $this->belongsTo(Server::class);
+        return $this->belongsTo(Server::class, 'server_uuid', 'uuid');
     }
 
     /**
      * Mark alert as resolved
      */
-    public function resolve(string $notes = null): void
+    public function resolve(?string $notes = null): void
     {
         $this->update([
             'resolved' => true,

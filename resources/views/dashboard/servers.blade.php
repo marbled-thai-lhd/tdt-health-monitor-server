@@ -54,11 +54,11 @@
                                 <div class="row">
                                     <div class="col-4 text-center">
                                         <div class="small text-muted">Supervisor</div>
-                                        <i class="fas fa-{{ $server->latestHealthReport->supervisor_status === 'healthy' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
+                                        <i class="fas fa-{{ $server->latestHealthReport->supervisor_status === 'ok' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
                                     </div>
                                     <div class="col-4 text-center">
                                         <div class="small text-muted">Cron</div>
-                                        <i class="fas fa-{{ $server->latestHealthReport->cron_status === 'healthy' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
+                                        <i class="fas fa-{{ $server->latestHealthReport->cron_status === 'ok' ? 'check-circle text-success' : 'times-circle text-danger' }}"></i>
                                     </div>
                                     <div class="col-4 text-center">
                                         <div class="small text-muted">Queue</div>

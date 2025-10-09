@@ -238,10 +238,8 @@ class HealthReportController extends Controller
             if (abs(time() - $timestamp) > 300) {
                 return false;
             }
-
             $payload = "{$serverName}:{$timestamp}";
             $expectedSignature = hash_hmac('sha256', $payload, $apiKey);
-
             return hash_equals($expectedSignature, $signature);
         } catch (\Exception $e) {
             return false;

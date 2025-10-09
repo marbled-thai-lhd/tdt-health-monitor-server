@@ -13,20 +13,36 @@ class HealthReportService
      */
     public function processHealthReport(Server $server, array $reportData, array $metadata = []): HealthReport
     {
-        // Calculate overall status from report data
-        $overallStatus = $this->calculateOverallStatus($reportData);
+        // Extract and normalize status values
+        $supervisorStatus = $this->normalizeStatus($reportData['supervisor']['status'] ?? null);
+        $cronStatus = $this->normalizeStatus($reportData['cron']['status'] ?? null);
+        $queueStatus = $this->normalizeStatus($reportData['queues']['status'] ?? null);
+        $systemStatus = $this->normalizeStatus($metadata['status'] ?? null);
 
-        // Create health report
+        // Calculate overall status from individual statuses
+        $overallStatus = $this->calculateOverallStatusFromComponents([
+            $supervisorStatus,
+            $cronStatus,
+            $queueStatus,
+            $systemStatus
+        ]);
+
+        // Create health report with separate status columns
         $healthReport = HealthReport::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'report_type' => 'health_check',
             'supervisor_data' => $reportData['supervisor'] ?? null,
+            'supervisor_status' => $supervisorStatus,
             'cron_data' => $reportData['cron'] ?? null,
+            'cron_status' => $cronStatus,
             'queue_data' => $reportData['queues'] ?? null,
+            'queue_status' => $queueStatus,
             'metadata' => array_merge($metadata, [
                 'server_ip' => $reportData['server_ip'] ?? null,
                 'received_at' => now()->toISOString(),
             ]),
+            'system_status' => $systemStatus,
             'overall_status' => $overallStatus,
             'reported_at' => Carbon::parse($reportData['timestamp']),
         ]);
@@ -39,29 +55,82 @@ class HealthReportService
      */
     public function processBackupNotification(Server $server, array $backupInfo): HealthReport
     {
+        $backupStatus = $this->normalizeStatus($this->getBackupStatus($backupInfo));
+
         return HealthReport::create([
             'server_id' => $server->id,
+            'server_uuid' => $server->uuid,
             'report_type' => 'backup_notification',
             'backup_data' => $backupInfo,
+            'backup_status' => $backupStatus,
             'metadata' => [
                 'received_at' => now()->toISOString(),
             ],
-            'overall_status' => $this->getBackupStatus($backupInfo),
+            'overall_status' => $backupStatus,
             'reported_at' => now(),
         ]);
     }
 
-    /**
-     * Calculate overall status from individual components
+        /**
+     * Calculate overall status from component statuses
      */
-    protected function calculateOverallStatus(array $reportData): string
+    private function calculateOverallStatusFromComponents(array $statuses): string
+    {
+        // Filter out null/empty statuses
+        $statuses = array_filter($statuses, fn($status) => !empty($status));
+
+        if (empty($statuses)) {
+            return 'unknown';
+        }
+
+        // Priority: error > warning > offline > ok
+        if (in_array('error', $statuses)) {
+            return 'error';
+        }
+        if (in_array('warning', $statuses)) {
+            return 'warning';
+        }
+        if (in_array('offline', $statuses)) {
+            return 'offline';
+        }
+        if (in_array('ok', $statuses)) {
+            return 'ok';
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * Normalize status values to consistent format
+     */
+    private function normalizeStatus(?string $status): ?string
+    {
+        if (!$status) {
+            return null;
+        }
+
+        return match($status) {
+            'healthy', 'ok', 'good', 'running' => 'ok',
+            'unhealthy', 'error', 'failed', 'critical', 'timeout' => 'error',
+            'warning', 'degraded' => 'warning',
+            'offline', 'stopped', 'no_processes' => 'offline',
+            default => $status
+        };
+    }
+
+    /**
+     * Calculate overall status from report data (legacy method)
+     */
+    public function calculateOverallStatus(array $reportData): string
     {
         $issues = [];
 
         // Check supervisor issues
         if (isset($reportData['supervisor'])) {
             $supervisorData = $reportData['supervisor'];
-            if ($supervisorData['status'] !== 'ok') {
+            $normalizedStatus = $this->normalizeStatus($supervisorData['status'] ?? 'unknown');
+
+            if ($normalizedStatus !== 'ok') {
                 $issues[] = 'supervisor';
             } elseif (isset($supervisorData['processes'])) {
                 foreach ($supervisorData['processes'] as $process) {
@@ -74,14 +143,18 @@ class HealthReportService
         }
 
         // Check cron issues
-        if (isset($reportData['cron']) && $reportData['cron']['status'] !== 'ok') {
-            $issues[] = 'cron';
+        if (isset($reportData['cron'])) {
+            $normalizedStatus = $this->normalizeStatus($reportData['cron']['status'] ?? 'unknown');
+            if ($normalizedStatus !== 'ok') {
+                $issues[] = 'cron';
+            }
         }
 
         // Check queue issues
         if (isset($reportData['queues'])) {
             $queueData = $reportData['queues'];
-            if ($queueData['status'] !== 'healthy') {
+            $normalizedStatus = $this->normalizeStatus($queueData['status'] ?? 'unknown');
+            if ($normalizedStatus !== 'ok') {
                 $issues[] = 'queue';
             }
         }

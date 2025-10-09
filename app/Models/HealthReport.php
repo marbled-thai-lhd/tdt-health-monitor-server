@@ -5,19 +5,27 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class HealthReport extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'uuid',
         'server_id',
+        'server_uuid',
         'report_type',
         'supervisor_data',
+        'supervisor_status',
         'cron_data',
+        'cron_status',
         'queue_data',
+        'queue_status',
         'backup_data',
+        'backup_status',
         'metadata',
+        'system_status',
         'overall_status',
         'reported_at',
     ];
@@ -32,11 +40,33 @@ class HealthReport extends Model
     ];
 
     /**
+     * Boot the model and generate UUID
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
+    /**
      * Get the server that owns this report
      */
     public function server(): BelongsTo
     {
-        return $this->belongsTo(Server::class);
+        return $this->belongsTo(Server::class, 'server_uuid', 'uuid');
     }
 
     /**
@@ -56,42 +86,94 @@ class HealthReport extends Model
     }
 
     /**
-     * Get supervisor status accessor
+     * Get supervisor status (from separate column, normalized during migration)
      */
     public function getSupervisorStatusAttribute(): string
     {
-        if (!$this->supervisor_data) {
-            return 'unknown';
-        }
-
-        return $this->supervisor_data['status'] ?? 'unknown';
+        return $this->attributes['supervisor_status'] ?? 'unknown';
     }
 
     /**
-     * Get cron status accessor
+     * Get cron status (from separate column, normalized during migration)
      */
     public function getCronStatusAttribute(): string
     {
-        if (!$this->cron_data) {
-            return 'unknown';
-        }
-
-        return $this->cron_data['status'] ?? 'unknown';
+        return $this->attributes['cron_status'] ?? 'unknown';
     }
 
     /**
-     * Get queue status accessor
+     * Get queue status (from separate column, normalized during migration)
      */
     public function getQueueStatusAttribute(): string
     {
-        if (!$this->queue_data) {
-            return 'unknown';
-        }
-
-        return $this->queue_data['status'] ?? 'unknown';
+        return $this->attributes['queue_status'] ?? 'unknown';
     }
 
     /**
+     * Get backup status (from separate column, normalized during migration)
+     */
+    public function getBackupStatusAttribute(): string
+    {
+        return $this->attributes['backup_status'] ?? 'unknown';
+    }
+
+    /**
+     * Get system status (from separate column, normalized during migration)
+     */
+    public function getSystemStatusAttribute(): string
+    {
+        return $this->attributes['system_status'] ?? 'unknown';
+    }
+
+    /**
+     * Get overall status (from separate column or calculate from components)
+     */
+    public function getOverallStatusAttribute(): string
+    {
+        // If overall_status is set, use it
+        if (!empty($this->attributes['overall_status'])) {
+            return $this->attributes['overall_status'];
+        }
+
+        // Otherwise calculate from component statuses
+        $statuses = [
+            $this->supervisor_status,
+            $this->cron_status,
+            $this->queue_status,
+            $this->backup_status,
+            $this->system_status
+        ];
+
+        // Priority: error > warning > offline > ok
+        if (in_array('error', $statuses)) {
+            return 'error';
+        }
+        if (in_array('warning', $statuses)) {
+            return 'warning';
+        }
+        if (in_array('offline', $statuses)) {
+            return 'offline';
+        }
+        if (in_array('ok', $statuses)) {
+            return 'ok';
+        }
+
+        return 'unknown';
+    }
+
+    /**
+     * Normalize status values to consistent format
+     */
+        private function normalizeStatus(?string $status): string
+    {
+        return match($status) {
+            'healthy', 'ok', 'good', 'running' => 'ok',
+            'unhealthy', 'error', 'failed', 'critical', 'timeout' => 'error',
+            'warning', 'degraded' => 'warning',
+            'offline', 'stopped', 'no_processes' => 'offline',
+            default => $status
+        };
+    }    /**
      * Get supervisor process issues
      */
     public function getSupervisorIssues(): array

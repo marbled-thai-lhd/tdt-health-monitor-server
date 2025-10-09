@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Server extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'uuid',
         'name',
         'ip_address',
         'base_url',
@@ -31,11 +33,33 @@ class Server extends Model
     ];
 
     /**
+     * Boot the model and generate UUID
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->uuid)) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName()
+    {
+        return 'uuid';
+    }
+
+    /**
      * Get health reports for this server
      */
     public function healthReports(): HasMany
     {
-        return $this->hasMany(HealthReport::class);
+        return $this->hasMany(HealthReport::class, 'server_uuid', 'uuid');
     }
 
     /**
