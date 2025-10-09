@@ -83,13 +83,13 @@ class Server extends Model
     public function updateStatus(string $overallStatus): void
     {
         $statusMap = [
-            'healthy' => 'active',
-            'warning' => 'warning',
-            'error' => 'error',
+            'healthy' => 'healthy',  // healthy -> healthy
+            'warning' => 'warning',  // warning -> warning  
+            'error' => 'critical',   // error -> critical
         ];
 
         $this->update([
-            'status' => $statusMap[$overallStatus] ?? 'error',
+            'status' => $statusMap[$overallStatus] ?? 'critical',
             'last_seen_at' => now(),
         ]);
     }
@@ -99,7 +99,7 @@ class Server extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', 'active');
+        return $query->where('status', 'healthy');
     }
 
     /**
@@ -107,7 +107,7 @@ class Server extends Model
      */
     public function scopeWithIssues($query)
     {
-        return $query->whereIn('status', ['warning', 'error']);
+        return $query->whereIn('status', ['warning', 'critical']);
     }
 
     /**

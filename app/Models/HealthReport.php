@@ -56,6 +56,42 @@ class HealthReport extends Model
     }
 
     /**
+     * Get supervisor status accessor
+     */
+    public function getSupervisorStatusAttribute(): string
+    {
+        if (!$this->supervisor_data) {
+            return 'unknown';
+        }
+        
+        return $this->supervisor_data['status'] ?? 'unknown';
+    }
+
+    /**
+     * Get cron status accessor
+     */
+    public function getCronStatusAttribute(): string
+    {
+        if (!$this->cron_data) {
+            return 'unknown';
+        }
+        
+        return $this->cron_data['status'] ?? 'unknown';
+    }
+
+    /**
+     * Get queue status accessor
+     */
+    public function getQueueStatusAttribute(): string
+    {
+        if (!$this->queue_data) {
+            return 'unknown';
+        }
+        
+        return $this->queue_data['status'] ?? 'unknown';
+    }
+
+    /**
      * Get supervisor process issues
      */
     public function getSupervisorIssues(): array
