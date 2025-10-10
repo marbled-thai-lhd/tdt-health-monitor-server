@@ -30,7 +30,7 @@
                         <dl class="row">
                             <dt class="col-sm-4">Server Name:</dt>
                             <dd class="col-sm-8"><code>{{ $server->name }}</code></dd>
-                            
+
                             <dt class="col-sm-4">Environment:</dt>
                             <dd class="col-sm-8">
                                 @if($server->environment)
@@ -57,7 +57,7 @@
                                     </button>
                                 </div>
                             </dd>
-                            
+
                             <dt class="col-sm-4">Monitoring URL:</dt>
                             <dd class="col-sm-8"><code>{{ url('/api/health-report') }}</code></dd>
                         </dl>
@@ -89,7 +89,7 @@
                         <p>Install the health monitor package via Composer:</p>
                         <div class="position-relative">
                             <pre class="bg-light p-3 rounded"><code>composer require tdt/health-monitor</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
                                     onclick="copyToClipboard('composer require tdt/health-monitor')">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -102,7 +102,7 @@
                         <p>Publish the package configuration:</p>
                         <div class="position-relative">
                             <pre class="bg-light p-3 rounded"><code>php artisan vendor:publish --provider="TDT\HealthMonitor\HealthMonitorServiceProvider" --tag="health-monitor-config"</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
                                     onclick="copyToClipboard('php artisan vendor:publish --provider=&quot;TDT\\HealthMonitor\\HealthMonitorServiceProvider&quot; --tag=&quot;health-monitor-config&quot;')">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -116,23 +116,55 @@
                         </h6>
                         <p>Add these variables to your <code>.env</code> file:</p>
                         <div class="position-relative">
-                            <pre class="bg-light p-3 rounded" style="font-size: 0.85rem;"><code>HEALTH_MONITOR_ENABLED=true
+                            <pre class="bg-light p-3 rounded" style="font-size: 0.8rem;"><code># Health Monitor Basic Configuration
+HEALTH_MONITOR_ENABLED=true
 HEALTH_MONITOR_URL={{ url('/api/health-report') }}
 HEALTH_MONITOR_API_KEY={{ $server->api_key }}
 HEALTH_MONITOR_SERVER_NAME={{ $server->name }}
+HEALTH_MONITOR_INTERVAL=5
 
-# Optional: Backup notification URL (if different)
+# Backup Notification URL
 HEALTH_MONITOR_BACKUP_NOTIFICATION_URL={{ url('/api/backup-notification') }}
 
-# Database backup settings (if needed)
+# System Monitoring Configuration
+CRON_USER={{ config('health-monitor.cron.user', 'ec2-user') }}
+SUPERVISOR_CONFIG_PATH=/etc/supervisor/conf.d
+QUEUE_HEALTH_CHECK_ENABLED=true
+QUEUE_HEALTH_CHECK_QUEUES=default,emails
+QUEUE_HEALTH_CHECK_TIMEOUT=30
+
+# Database Backup Configuration
 DB_BACKUP_ENABLED=true
+DB_BACKUP_SCHEDULE="0 2 * * *"
 DB_BACKUP_S3_BUCKET=your-backup-bucket
+DB_BACKUP_S3_REGION=us-east-1
+DB_BACKUP_S3_PATH=database-backups
+DB_BACKUP_RETENTION_DAYS=30
 AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Client-Side Logging Configuration
+HEALTH_MONITOR_LOGGING_ENABLED=true
+HEALTH_LOG_ENABLED=true
+HEALTH_LOG_DAILY=true
+HEALTH_LOG_DAILY_DAYS=30
+BACKUP_LOG_ENABLED=true
+BACKUP_LOG_DAILY=true
+BACKUP_LOG_DAILY_DAYS=90</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
                                     onclick="copyEnvConfig()">
                                 <i class="fas fa-copy"></i>
                             </button>
+                        </div>
+
+                        <div class="alert alert-info mt-3">
+                            <strong><i class="fas fa-info-circle me-1"></i>Configuration Notes:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><strong>CRON_USER:</strong> Set to your system user (check with <code>whoami</code>)</li>
+                                <li><strong>SUPERVISOR_CONFIG_PATH:</strong> Adjust based on your system's supervisor configuration</li>
+                                <li><strong>QUEUE_HEALTH_CHECK_QUEUES:</strong> List queues to monitor (comma-separated)</li>
+                                <li><strong>Client Logging:</strong> Creates daily log files in <code>storage/logs/</code> directory</li>
+                            </ul>
                         </div>
 
                         <h6 class="text-primary mb-3 mt-4">
@@ -142,7 +174,7 @@ AWS_SECRET_ACCESS_KEY=your-secret-key</code></pre>
                         <p>Run the setup command:</p>
                         <div class="position-relative">
                             <pre class="bg-light p-3 rounded"><code>php artisan health:setup-schedule</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
                                     onclick="copyToClipboard('php artisan health:setup-schedule')">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -161,7 +193,7 @@ AWS_SECRET_ACCESS_KEY=your-secret-key</code></pre>
                     <div class="col-md-6">
                         <div class="position-relative">
                             <pre class="bg-light p-3 rounded"><code>php artisan health:check --force</code></pre>
-                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2" 
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
                                     onclick="copyToClipboard('php artisan health:check --force')">
                                 <i class="fas fa-copy"></i>
                             </button>
@@ -172,6 +204,35 @@ AWS_SECRET_ACCESS_KEY=your-secret-key</code></pre>
                             <small>
                                 <i class="fas fa-info-circle me-1"></i>
                                 You should see a successful health report sent to the monitoring server.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="text-warning mb-3 mt-4">
+                    <span class="badge bg-warning me-2">6</span>
+                    Verify Logging (Optional)
+                </h6>
+                <p>Check that client-side logging is working correctly:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="position-relative">
+                            <pre class="bg-light p-3 rounded"><code># Check health check logs
+tail -f storage/logs/health-check-$(date +%Y-%m-%d).log
+
+# Check database backup logs
+tail -f storage/logs/database-backup-$(date +%Y-%m-%d).log</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                                    onclick="copyToClipboard('tail -f storage/logs/health-check-$(date +%Y-%m-%d).log')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-success py-2">
+                            <small>
+                                <i class="fas fa-chart-line me-1"></i>
+                                <strong>Daily logs include:</strong> Execution time, command options, component status, success/error details with JSON formatting.
                             </small>
                         </div>
                     </div>
@@ -203,7 +264,7 @@ AWS_SECRET_ACCESS_KEY=your-secret-key</code></pre>
 function toggleApiKey() {
     const field = document.getElementById('apiKeyField');
     const icon = document.getElementById('eyeIcon');
-    
+
     if (field.type === 'password') {
         field.type = 'text';
         icon.className = 'fas fa-eye-slash';
@@ -218,7 +279,7 @@ function copyApiKey() {
     field.select();
     field.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(field.value);
-    
+
     // Show success feedback
     const button = event.target.closest('button');
     const originalIcon = button.innerHTML;
@@ -230,7 +291,7 @@ function copyApiKey() {
 
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
-    
+
     // Show success feedback
     const button = event.target.closest('button');
     const originalIcon = button.innerHTML;
@@ -241,22 +302,44 @@ function copyToClipboard(text) {
 }
 
 function copyEnvConfig() {
-    const envConfig = `HEALTH_MONITOR_ENABLED=true
+    const envConfig = `# Health Monitor Basic Configuration
+HEALTH_MONITOR_ENABLED=true
 HEALTH_MONITOR_URL={{ url('/api/health-report') }}
 HEALTH_MONITOR_API_KEY={{ $server->api_key }}
 HEALTH_MONITOR_SERVER_NAME={{ $server->name }}
+HEALTH_MONITOR_INTERVAL=5
 
-# Optional: Backup notification URL (if different)
+# Backup Notification URL
 HEALTH_MONITOR_BACKUP_NOTIFICATION_URL={{ url('/api/backup-notification') }}
 
-# Database backup settings (if needed)
+# System Monitoring Configuration
+CRON_USER={{ config('health-monitor.cron.user', 'ec2-user') }}
+SUPERVISOR_CONFIG_PATH=/etc/supervisor/conf.d
+QUEUE_HEALTH_CHECK_ENABLED=true
+QUEUE_HEALTH_CHECK_QUEUES=default,emails
+QUEUE_HEALTH_CHECK_TIMEOUT=30
+
+# Database Backup Configuration
 DB_BACKUP_ENABLED=true
+DB_BACKUP_SCHEDULE="0 2 * * *"
 DB_BACKUP_S3_BUCKET=your-backup-bucket
+DB_BACKUP_S3_REGION=us-east-1
+DB_BACKUP_S3_PATH=database-backups
+DB_BACKUP_RETENTION_DAYS=30
 AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key`;
+AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Client-Side Logging Configuration
+HEALTH_MONITOR_LOGGING_ENABLED=true
+HEALTH_LOG_ENABLED=true
+HEALTH_LOG_DAILY=true
+HEALTH_LOG_DAILY_DAYS=30
+BACKUP_LOG_ENABLED=true
+BACKUP_LOG_DAILY=true
+BACKUP_LOG_DAILY_DAYS=90`;
 
     navigator.clipboard.writeText(envConfig);
-    
+
     // Show success feedback
     const button = event.target.closest('button');
     const originalIcon = button.innerHTML;

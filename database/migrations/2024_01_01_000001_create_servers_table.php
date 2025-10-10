@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('servers', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
+            $table->uuid('id')->unique()->primary();
             $table->string('name')->unique();
             $table->string('ip_address')->nullable();
             $table->string('base_url')->nullable();
@@ -21,12 +20,11 @@ return new class extends Migration
             $table->enum('environment', ['production', 'staging', 'development', 'testing'])->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('api_key')->unique();
-            $table->enum('status', ['ok', 'warning', 'error', 'offline'])->default('offline');
+            $table->string('status')->default('offline');
             $table->timestamp('last_seen_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
 
-            $table->index('uuid');
             $table->index(['status', 'last_seen_at']);
             $table->index(['is_active', 'status']);
         });

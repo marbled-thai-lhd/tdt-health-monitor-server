@@ -10,11 +10,11 @@ use Illuminate\Support\Str;
 class HealthReport extends Model
 {
     use HasFactory;
+    public $incrementing = false;
 
     protected $fillable = [
-        'uuid',
+        'id',
         'server_id',
-        'server_uuid',
         'report_type',
         'supervisor_data',
         'supervisor_status',
@@ -47,8 +47,8 @@ class HealthReport extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = (string) Str::uuid();
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
             }
         });
     }
@@ -58,7 +58,7 @@ class HealthReport extends Model
      */
     public function getRouteKeyName()
     {
-        return 'uuid';
+        return 'id';
     }
 
     /**
@@ -66,7 +66,7 @@ class HealthReport extends Model
      */
     public function server(): BelongsTo
     {
-        return $this->belongsTo(Server::class, 'server_uuid', 'uuid');
+        return $this->belongsTo(Server::class, 'server_id', 'id');
     }
 
     /**

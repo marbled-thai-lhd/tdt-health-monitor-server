@@ -10,11 +10,11 @@ use Illuminate\Support\Str;
 class Alert extends Model
 {
     use HasFactory;
+    public $incrementing = false;
 
     protected $fillable = [
-        'uuid',
+        'id',
         'server_id',
-        'server_uuid',
         'type',
         'severity',
         'title',
@@ -39,8 +39,8 @@ class Alert extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = (string) Str::uuid();
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
             }
         });
     }
@@ -50,7 +50,7 @@ class Alert extends Model
      */
     public function getRouteKeyName()
     {
-        return 'uuid';
+        return 'id';
     }
 
     /**
@@ -58,7 +58,7 @@ class Alert extends Model
      */
     public function server(): BelongsTo
     {
-        return $this->belongsTo(Server::class, 'server_uuid', 'uuid');
+        return $this->belongsTo(Server::class, 'server_id', 'id');
     }
 
     /**
@@ -131,7 +131,6 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'type' => 'server_offline',
             'severity' => 'critical',
             'title' => "Server '{$server->name}' is offline",
@@ -152,7 +151,6 @@ class Alert extends Model
 
         return self::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'type' => 'supervisor_issue',
             'severity' => 'high',
             'title' => "Supervisor processes not running on '{$server->name}'",
@@ -170,7 +168,6 @@ class Alert extends Model
 
         return self::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'type' => 'queue_issue',
             'severity' => 'high',
             'title' => "Queue health issues on '{$server->name}'",
@@ -186,7 +183,6 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'type' => 'cron_issue',
             'severity' => 'medium',
             'title' => "Cron monitoring issue on '{$server->name}'",
@@ -201,7 +197,6 @@ class Alert extends Model
     {
         return self::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'type' => 'backup_failed',
             'severity' => 'high',
             'title' => "Database backup failed on '{$server->name}'",

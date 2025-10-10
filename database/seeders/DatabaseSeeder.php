@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         \App\Models\Server::create([
-            'uuid' => '1bde9dd1-2166-493b-8db1-c23f8d9d3d6e',
+            'id' => '1bde9dd1-2166-493b-8db1-c23f8d9d3d6e',
             'name' => 'aripla-local',
             'ip_address' => '127.0.0.1',
             'base_url' => 'http://127.0.0.1:8002',

@@ -146,7 +146,7 @@ class DashboardController extends Controller
     {
         try {
             // Create a force check request to the monitored server
-            $client = new \GuzzleHttp\Client(['timeout' => 30]);
+            $client = new \GuzzleHttp\Client(['timeout' => 60]);
 
             // The monitored server should have an endpoint to trigger immediate health check
             $forceCheckUrl = $server->base_url . '/health-monitor/force-check';

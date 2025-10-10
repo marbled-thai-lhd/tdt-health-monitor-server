@@ -11,9 +11,10 @@ use Illuminate\Support\Str;
 class Server extends Model
 {
     use HasFactory;
+    public $incrementing = false;
 
     protected $fillable = [
-        'uuid',
+        'id',
         'name',
         'ip_address',
         'base_url',
@@ -40,8 +41,8 @@ class Server extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = (string) Str::uuid();
+            if (empty($model->id)) {
+                $model->id = (string) Str::uuid();
             }
         });
     }
@@ -51,7 +52,7 @@ class Server extends Model
      */
     public function getRouteKeyName()
     {
-        return 'uuid';
+        return 'id';
     }
 
     /**
@@ -59,7 +60,7 @@ class Server extends Model
      */
     public function healthReports(): HasMany
     {
-        return $this->hasMany(HealthReport::class, 'server_uuid', 'uuid');
+        return $this->hasMany(HealthReport::class, 'server_id', 'id');
     }
 
     /**

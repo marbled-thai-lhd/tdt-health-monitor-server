@@ -12,10 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('alerts', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
-            $table->foreignId('server_id')->constrained()->onDelete('cascade');
-            $table->uuid('server_uuid');
+            $table->uuid('id')->unique()->primary();
+            $table->uuid('server_id');
             $table->enum('type', ['server_offline', 'supervisor_issue', 'cron_issue', 'queue_issue', 'backup_failed']);
             $table->enum('severity', ['low', 'medium', 'high', 'critical'])->default('medium');
             $table->string('title');
@@ -26,13 +24,10 @@ return new class extends Migration
             $table->text('resolution_notes')->nullable();
             $table->timestamps();
 
-            $table->index('uuid');
-            $table->index('server_uuid');
+            $table->index('server_id');
             $table->index(['server_id', 'resolved']);
             $table->index(['type', 'severity']);
             $table->index('created_at');
-
-            $table->foreign('server_uuid')->references('uuid')->on('servers')->onDelete('cascade');
         });
     }
 

@@ -12,10 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('health_reports', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
-            $table->foreignId('server_id')->constrained()->onDelete('cascade');
-            $table->uuid('server_uuid');
+            $table->uuid('id')->unique()->primary();
+            $table->uuid('server_id');
             $table->enum('report_type', ['health_check', 'backup_notification'])->default('health_check');
             $table->json('supervisor_data')->nullable();
             $table->string('supervisor_status', 20)->nullable();
@@ -31,15 +29,11 @@ return new class extends Migration
             $table->timestamp('reported_at');
             $table->timestamps();
 
-            $table->index('uuid');
-            $table->index('server_uuid');
             $table->index(['server_id', 'reported_at']);
             $table->index(['overall_status', 'reported_at']);
             $table->index('report_type');
             $table->index(['supervisor_status', 'cron_status'], 'hr_status_idx');
             $table->index(['queue_status', 'backup_status'], 'hr_queue_backup_idx');
-
-            $table->foreign('server_uuid')->references('uuid')->on('servers')->onDelete('cascade');
         });
     }
 

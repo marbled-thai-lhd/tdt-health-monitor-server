@@ -31,7 +31,6 @@ class HealthReportService
         // Create health report with separate status columns
         $healthReport = HealthReport::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'report_type' => 'health_check',
             'supervisor_data' => $reportData['supervisor'] ?? null,
             'supervisor_status' => $supervisorStatus,
@@ -63,7 +62,6 @@ class HealthReportService
 
         return HealthReport::create([
             'server_id' => $server->id,
-            'server_uuid' => $server->uuid,
             'report_type' => 'backup_notification',
             'backup_data' => $backupInfo,
             'backup_status' => $backupStatus,
@@ -235,12 +233,34 @@ class HealthReportService
             ->orderBy('reported_at')
             ->get(['overall_status', 'reported_at']);
 
-        return $reports->map(function ($report) {
-            return [
-                'timestamp' => $report->reported_at->toISOString(),
-                'status' => $report->overall_status,
+        // Group reports by hour to reduce noise and get better visualization
+        $groupedReports = $reports->groupBy(function ($report) {
+            return $report->reported_at->format('Y-m-d H:00:00');
+        });
+
+        $timeline = [];
+
+        // Generate hourly timeline for the last 24 hours
+        for ($i = $hours - 1; $i >= 0; $i--) {
+            $hour = now()->subHours($i)->format('Y-m-d H:00:00');
+            $hourReports = $groupedReports->get($hour, collect());
+
+            if ($hourReports->count() > 0) {
+                // Get the most recent status for this hour
+                $latestReport = $hourReports->last();
+                $status = $latestReport->overall_status;
+            } else {
+                // If no reports for this hour, assume offline
+                $status = 'offline';
+            }
+
+            $timeline[] = [
+                'timestamp' => now()->subHours($i)->toISOString(),
+                'status' => $status,
             ];
-        })->toArray();
+        }
+
+        return $timeline;
     }
 
     /**

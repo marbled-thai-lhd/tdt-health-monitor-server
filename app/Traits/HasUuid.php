@@ -12,8 +12,8 @@ trait HasUuid
     protected static function bootHasUuid(): void
     {
         static::creating(function ($model) {
-            if (empty($model->uuid)) {
-                $model->uuid = Str::uuid()->toString();
+            if (empty($model->id)) {
+                $model->id = Str::uuid()->toString();
             }
         });
     }
@@ -23,14 +23,14 @@ trait HasUuid
      */
     public function getRouteKeyName(): string
     {
-        return 'uuid';
+        return 'id';
     }
 
     /**
      * Scope to find by UUID
      */
-    public function scopeByUuid($query, string $uuid)
+    public function scopeByUuid($query, string $id)
     {
-        return $query->where('uuid', $uuid);
+        return $query->where('id', $id);
     }
 }

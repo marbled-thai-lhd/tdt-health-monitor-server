@@ -23,7 +23,7 @@
             <i class="fas fa-edit me-1"></i>
             Edit Server
         </button>
-        <button class="btn btn-primary" onclick="forceHealthCheck({{ $server->id }})">
+        <button class="btn btn-primary" onclick="forceHealthCheck('{{ $server->id }}')">
             <i class="fas fa-sync me-1"></i>
             Force Check
         </button>
@@ -63,7 +63,9 @@
                             <dt class="col-sm-4">Last Seen:</dt>
                             <dd class="col-sm-8">
                                 @if($server->last_seen_at)
-                                    {{ $server->last_seen_at->format('M d, Y H:i:s') }}
+                                    <span class="local-time" data-utc="{{ $server->last_seen_at->toISOString() }}">
+                                        {{ $server->last_seen_at->format('M d, Y H:i:s') }} UTC
+                                    </span>
                                     <small class="text-muted d-block">{{ $server->last_seen_at->diffForHumans() }}</small>
                                 @else
                                     Never
@@ -71,7 +73,11 @@
                             </dd>
 
                             <dt class="col-sm-4">Created:</dt>
-                            <dd class="col-sm-8">{{ $server->created_at->format('M d, Y') }}</dd>
+                            <dd class="col-sm-8">
+                                <span class="local-date" data-utc="{{ $server->created_at->toISOString() }}">
+                                    {{ $server->created_at->format('M d, Y') }}
+                                </span>
+                            </dd>
 
                             <dt class="col-sm-4">Reports:</dt>
                             <dd class="col-sm-8">{{ $server->healthReports->count() }} total</dd>
@@ -107,7 +113,9 @@
                     <h5 class="card-title mb-0">
                         <i class="fas fa-stethoscope text-success me-2"></i>
                         Latest Health Report
-                        <small class="text-muted">{{ $latestReport->created_at->diffForHumans() }}</small>
+                        <small class="text-muted local-time-relative" data-utc="{{ $latestReport->created_at->toISOString() }}">
+                            {{ $latestReport->created_at->diffForHumans() }}
+                        </small>
                     </h5>
                 </div>
                 <div class="card-body">
@@ -207,7 +215,9 @@
                                 @foreach($server->healthReports as $report)
                                     <tr>
                                         <td>
-                                            <small>{{ $report->created_at->format('M d H:i') }}</small>
+                                            <small class="local-time-short" data-utc="{{ $report->created_at->toISOString() }}">
+                                                {{ $report->created_at->format('M d H:i') }}
+                                            </small>
                                         </td>
                                         <td>
                                             <span class="badge status-badge status-{{ $report->supervisor_status }}"
@@ -265,7 +275,7 @@
                                 <div class="flex-grow-1">
                                     <h6 class="mb-1">{{ $alert->type }}</h6>
                                     <p class="mb-1 text-muted small">{{ $alert->message }}</p>
-                                    <small class="text-muted">
+                                    <small class="text-muted local-time-relative" data-utc="{{ $alert->created_at->toISOString() }}">
                                         {{ $alert->created_at->diffForHumans() }}
                                     </small>
                                 </div>
@@ -302,21 +312,84 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('healthTimeline').getContext('2d');
     const timelineData = @json($healthTimeline ?? []);
 
+    // Convert status to score and format timeline data
+    const processedData = timelineData.map(item => {
+        // Convert status to health score
+        let score;
+        switch(item.status) {
+            case 'ok':
+                score = 100;
+                break;
+            case 'warning':
+                score = 60;
+                break;
+            case 'error':
+                score = 20;
+                break;
+            default:
+                score = 0;
+        }
+
+        // Parse timestamp and convert to local timezone
+        const utcDate = new Date(item.timestamp);
+        const localDate = new Date(utcDate.getTime() + (utcDate.getTimezoneOffset() * 60000));
+
+        return {
+            time: new Date(item.timestamp), // Keep original for proper timezone handling
+            score: score,
+            status: item.status
+        };
+    });
+
+    // If no data, show placeholder
+    if (processedData.length === 0) {
+        // Generate placeholder data for the last 24 hours
+        const now = new Date();
+        for (let i = 23; i >= 0; i--) {
+            const time = new Date(now.getTime() - (i * 60 * 60 * 1000));
+            processedData.push({
+                time: time,
+                score: 0,
+                status: 'offline'
+            });
+        }
+    }
+
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: timelineData.map(item => {
-                const date = new Date(item.time);
+            labels: processedData.map(item => {
+                const date = item.time;
                 return date.getHours().toString().padStart(2, '0') + ':' +
                        date.getMinutes().toString().padStart(2, '0');
             }),
             datasets: [{
                 label: 'Health Score',
-                data: timelineData.map(item => item.score),
-                borderColor: '#007bff',
+                data: processedData.map(item => item.score),
+                borderColor: function(context) {
+                    const status = processedData[context.dataIndex]?.status;
+                    switch(status) {
+                        case 'ok': return '#28a745';
+                        case 'warning': return '#ffc107';
+                        case 'error': return '#dc3545';
+                        default: return '#6c757d';
+                    }
+                },
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointBackgroundColor: function(context) {
+                    const status = processedData[context.dataIndex]?.status;
+                    switch(status) {
+                        case 'ok': return '#28a745';
+                        case 'warning': return '#ffc107';
+                        case 'error': return '#dc3545';
+                        default: return '#6c757d';
+                    }
+                },
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4
             }]
         },
         options: {
@@ -331,6 +404,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             return value + '%';
                         }
                     }
+                },
+                x: {
+                    grid: {
+                        display: true
+                    }
                 }
             },
             plugins: {
@@ -340,14 +418,127 @@ document.addEventListener('DOMContentLoaded', function() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return 'Health: ' + context.parsed.y + '%';
+                            const dataPoint = processedData[context.dataIndex];
+                            return `Health: ${context.parsed.y}% (${dataPoint.status})`;
+                        },
+                        title: function(context) {
+                            const dataPoint = processedData[context[0].dataIndex];
+                            // Format time according to browser's locale and timezone
+                            return dataPoint.time.toLocaleString('vi-VN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: false
+                            });
                         }
                     }
                 }
             }
         }
     });
+
+    // Convert UTC times to local timezone
+    convertTimesToLocal();
 });
+
+function convertTimesToLocal() {
+    // Convert local-time elements (full datetime)
+    document.querySelectorAll('.local-time').forEach(function(element) {
+        const utcTime = element.getAttribute('data-utc');
+        if (utcTime) {
+            const localDate = new Date(utcTime);
+            element.textContent = localDate.toLocaleString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+    });
+
+    // Convert local-date elements (date only)
+    document.querySelectorAll('.local-date').forEach(function(element) {
+        const utcTime = element.getAttribute('data-utc');
+        if (utcTime) {
+            const localDate = new Date(utcTime);
+            element.textContent = localDate.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+    });
+
+    // Convert local-time-short elements (short format for tables)
+    document.querySelectorAll('.local-time-short').forEach(function(element) {
+        const utcTime = element.getAttribute('data-utc');
+        if (utcTime) {
+            const localDate = new Date(utcTime);
+            element.textContent = localDate.toLocaleDateString('vi-VN', {
+                month: 'short',
+                day: '2-digit'
+            }) + ' ' + localDate.toLocaleTimeString('vi-VN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        }
+    });
+
+    // Update relative time elements
+    document.querySelectorAll('.local-time-relative').forEach(function(element) {
+        const utcTime = element.getAttribute('data-utc');
+        if (utcTime) {
+            const date = new Date(utcTime);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            let relativeText;
+            if (diffInSeconds < 60) {
+                relativeText = diffInSeconds + ' giây trước';
+            } else if (diffInSeconds < 3600) {
+                relativeText = Math.floor(diffInSeconds / 60) + ' phút trước';
+            } else if (diffInSeconds < 86400) {
+                relativeText = Math.floor(diffInSeconds / 3600) + ' giờ trước';
+            } else {
+                relativeText = Math.floor(diffInSeconds / 86400) + ' ngày trước';
+            }
+
+            element.textContent = relativeText;
+        }
+    });
+
+    // Update relative times every minute
+    setTimeout(function() {
+        document.querySelectorAll('.local-time-relative').forEach(function(element) {
+            const utcTime = element.getAttribute('data-utc');
+            if (utcTime) {
+                const date = new Date(utcTime);
+                const now = new Date();
+                const diffInSeconds = Math.floor((now - date) / 1000);
+
+                let relativeText;
+                if (diffInSeconds < 60) {
+                    relativeText = diffInSeconds + ' giây trước';
+                } else if (diffInSeconds < 3600) {
+                    relativeText = Math.floor(diffInSeconds / 60) + ' phút trước';
+                } else if (diffInSeconds < 86400) {
+                    relativeText = Math.floor(diffInSeconds / 3600) + ' giờ trước';
+                } else {
+                    relativeText = Math.floor(diffInSeconds / 86400) + ' ngày trước';
+                }
+
+                element.textContent = relativeText;
+            }
+        });
+    }, 60000); // Update every minute
+}
 
 function resolveAlert(alertId) {
     if (confirm('Are you sure you want to resolve this alert?')) {
@@ -384,8 +575,7 @@ function forceHealthCheck(serverId) {
     fetch(`/dashboard/servers/${serverId}/force-check`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'Content-Type': 'application/json'
         }
     })
     .then(response => response.json())

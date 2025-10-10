@@ -141,7 +141,9 @@
                         <h1 class="h3 mb-0">@yield('title', 'Dashboard')</h1>
                         <div class="text-muted">
                             <i class="fas fa-clock me-1"></i>
-                            {{ now()->format('M d, Y H:i') }}
+                            <span class="local-time-header" data-utc="{{ now()->toISOString() }}">
+                                {{ now()->format('M d, Y H:i') }}
+                            </span>
                         </div>
                     </div>
 
@@ -169,6 +171,33 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Global timezone conversion script -->
+    <script>
+        function updateHeaderTime() {
+            const now = new Date();
+            const timeElement = document.querySelector('.local-time-header');
+            if (timeElement) {
+                timeElement.textContent = now.toLocaleDateString('vi-VN', {
+                    month: 'short',
+                    day: '2-digit',
+                    year: 'numeric'
+                }) + ' ' + now.toLocaleTimeString('vi-VN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update header time immediately
+            updateHeaderTime();
+
+            // Update header time every minute
+            setInterval(updateHeaderTime, 60000);
+        });
+    </script>
 
     @stack('scripts')
 </body>
