@@ -203,16 +203,16 @@ class DashboardController extends Controller
     public function exportAlerts(Request $request)
     {
         $query = Alert::with('server');
-        
+
         // Apply same filters as alerts() method
         if ($request->filled('server')) {
             $query->where('server_id', $request->input('server'));
         }
-        
+
         if ($request->filled('severity')) {
             $query->where('severity', $request->input('severity'));
         }
-        
+
         if ($request->filled('status')) {
             if ($request->input('status') === 'unresolved') {
                 $query->unresolved();
@@ -223,23 +223,23 @@ class DashboardController extends Controller
             // Default to all alerts for export
             // Don't filter by status
         }
-        
+
         $alerts = $query->orderByDesc('created_at')->get();
-        
+
         $filename = 'alerts_' . now()->format('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
-        
+
         $callback = function() use ($alerts) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV Headers
             fputcsv($file, [
                 'Alert ID',
-                'Server Name', 
+                'Server Name',
                 'Server IP',
                 'Type',
                 'Severity',
@@ -249,7 +249,7 @@ class DashboardController extends Controller
                 'Resolved At',
                 'Resolution Notes'
             ]);
-            
+
             // CSV Data
             foreach ($alerts as $alert) {
                 fputcsv($file, [
@@ -265,10 +265,10 @@ class DashboardController extends Controller
                     $alert->resolution_notes ?? ''
                 ]);
             }
-            
+
             fclose($file);
         };
-        
+
         return response()->stream($callback, 200, $headers);
     }
 
@@ -278,24 +278,24 @@ class DashboardController extends Controller
     public function resolveAllAlerts(Request $request)
     {
         $query = Alert::unresolved();
-        
+
         // Apply same filters as alerts() method if provided
         if ($request->filled('server')) {
             $query->where('server_id', $request->input('server'));
         }
-        
+
         if ($request->filled('severity')) {
             $query->where('severity', $request->input('severity'));
         }
-        
+
         $unresolvedAlerts = $query->get();
         $resolvedCount = 0;
-        
+
         foreach ($unresolvedAlerts as $alert) {
             $alert->resolve('Bulk resolved by administrator');
             $resolvedCount++;
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => "Successfully resolved {$resolvedCount} alert(s).",

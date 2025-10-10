@@ -9,7 +9,7 @@
         <p class="text-muted mb-0">Monitor and resolve system alerts</p>
     </div>
     <div>
-        <a href="{{ route('dashboard.alerts.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
+        <a href="{{ route('dashboard.alerts.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
            class="btn btn-outline-primary me-2">
             <i class="fas fa-download me-1"></i>
             Export
@@ -528,15 +528,15 @@ function resolveAllAlerts() {
     if (confirm('Are you sure you want to resolve ALL unresolved alerts? This action cannot be undone.')) {
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;
-        
+
         // Show loading state
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Resolving...';
-        
+
         // Build query string to preserve current filters
         const urlParams = new URLSearchParams(window.location.search);
         const queryString = urlParams.toString();
-        
+
         fetch(`/dashboard/alerts/resolve-all${queryString ? '?' + queryString : ''}`, {
             method: 'POST',
             headers: {
