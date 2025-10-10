@@ -113,22 +113,50 @@ class DashboardController extends Controller
     /**
      * Show alerts
      */
-    public function alerts(): View
+    public function alerts(Request $request): View
     {
-        $alerts = Alert::with('server')
-            ->unresolved()
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $query = Alert::with('server');
+
+        // Apply filters based on request parameters
+        if ($request->filled('server')) {
+            $query->where('server_id', $request->input('server'));
+        }
+
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->input('severity'));
+        }
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'unresolved') {
+                $query->unresolved();
+            } elseif ($request->input('status') === 'resolved') {
+                $query->resolved();
+            }
+            // If status is any other value (or empty string), show all alerts
+        }
+        // If no status parameter at all, default to unresolved for initial page load
+        else if (!$request->has('status')) {
+            $query->unresolved();
+        }
+        // If status parameter exists but is empty (All Status selected), show all alerts
+
+        $alerts = $query->orderByDesc('created_at')->paginate(20);
+
+        // Preserve query parameters in pagination links
+        $alerts->appends($request->query());
 
         $alertStats = $this->alertService->getAlertStatistics();
 
-        return view('dashboard.alerts', compact('alerts', 'alertStats'));
+        // Get all servers for filter dropdown
+        $servers = Server::orderBy('name')->get();
+
+        return view('dashboard.alerts', compact('alerts', 'alertStats', 'servers'));
     }
 
     /**
      * Resolve an alert
      */
-    public function resolveAlert(Request $request, Alert $alert): RedirectResponse
+    public function resolveAlert(Request $request, Alert $alert)
     {
         $request->validate([
             'resolution_notes' => 'nullable|string|max:1000'
@@ -136,7 +164,143 @@ class DashboardController extends Controller
 
         $alert->resolve($request->input('resolution_notes'));
 
-        return back()->with('success', 'Alert resolved successfully.');
+        return $request->input('json') ? [
+            'success' => true,
+            'message' => 'Alert resolved successfully.'
+        ] : redirect()->route('dashboard.alerts')->with('success', 'Alert resolved successfully.');
+    }
+
+    /**
+     * Get alert details for modal
+     */
+    public function getAlertDetail(Alert $alert)
+    {
+        $alert->load('server');
+
+        return response()->json([
+            'success' => true,
+            'alert' => [
+                'id' => $alert->id,
+                'type' => $alert->type,
+                'severity' => $alert->severity,
+                'message' => $alert->message,
+                'data' => $alert->data,
+                'created_at' => $alert->created_at->toISOString(),
+                'resolved_at' => $alert->resolved_at?->toISOString(),
+                'resolution_notes' => $alert->resolution_notes,
+                'server' => [
+                    'id' => $alert->server->id,
+                    'name' => $alert->server->name,
+                    'ip_address' => $alert->server->ip_address,
+                ]
+            ]
+        ]);
+    }
+
+    /**
+     * Export alerts to CSV
+     */
+    public function exportAlerts(Request $request)
+    {
+        $query = Alert::with('server');
+        
+        // Apply same filters as alerts() method
+        if ($request->filled('server')) {
+            $query->where('server_id', $request->input('server'));
+        }
+        
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->input('severity'));
+        }
+        
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'unresolved') {
+                $query->unresolved();
+            } elseif ($request->input('status') === 'resolved') {
+                $query->resolved();
+            }
+        } else {
+            // Default to all alerts for export
+            // Don't filter by status
+        }
+        
+        $alerts = $query->orderByDesc('created_at')->get();
+        
+        $filename = 'alerts_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        
+        $callback = function() use ($alerts) {
+            $file = fopen('php://output', 'w');
+            
+            // CSV Headers
+            fputcsv($file, [
+                'Alert ID',
+                'Server Name', 
+                'Server IP',
+                'Type',
+                'Severity',
+                'Message',
+                'Status',
+                'Created At',
+                'Resolved At',
+                'Resolution Notes'
+            ]);
+            
+            // CSV Data
+            foreach ($alerts as $alert) {
+                fputcsv($file, [
+                    $alert->id,
+                    $alert->server->name,
+                    $alert->server->ip_address,
+                    $alert->type,
+                    $alert->severity,
+                    $alert->message,
+                    $alert->resolved_at ? 'Resolved' : 'Unresolved',
+                    $alert->created_at->format('Y-m-d H:i:s'),
+                    $alert->resolved_at ? $alert->resolved_at->format('Y-m-d H:i:s') : '',
+                    $alert->resolution_notes ?? ''
+                ]);
+            }
+            
+            fclose($file);
+        };
+        
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Resolve all unresolved alerts
+     */
+    public function resolveAllAlerts(Request $request)
+    {
+        $query = Alert::unresolved();
+        
+        // Apply same filters as alerts() method if provided
+        if ($request->filled('server')) {
+            $query->where('server_id', $request->input('server'));
+        }
+        
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->input('severity'));
+        }
+        
+        $unresolvedAlerts = $query->get();
+        $resolvedCount = 0;
+        
+        foreach ($unresolvedAlerts as $alert) {
+            $alert->resolve('Bulk resolved by administrator');
+            $resolvedCount++;
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully resolved {$resolvedCount} alert(s).",
+            'resolved_count' => $resolvedCount
+        ]);
     }
 
     /**

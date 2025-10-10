@@ -17,4 +17,7 @@ Route::post('/dashboard/servers/{server}/force-check', [DashboardController::cla
 
 // Alert routes
 Route::get('/dashboard/alerts', [DashboardController::class, 'alerts'])->name('dashboard.alerts');
+Route::get('/dashboard/alerts/export', [DashboardController::class, 'exportAlerts'])->name('dashboard.alerts.export');
+Route::post('/dashboard/alerts/resolve-all', [DashboardController::class, 'resolveAllAlerts'])->name('dashboard.alerts.resolve-all');
+Route::get('/dashboard/alerts/{alert}/detail', [DashboardController::class, 'getAlertDetail'])->name('dashboard.alerts.detail');
 Route::post('/dashboard/alerts/{alert}/resolve', [DashboardController::class, 'resolveAlert'])->name('dashboard.resolve-alert');

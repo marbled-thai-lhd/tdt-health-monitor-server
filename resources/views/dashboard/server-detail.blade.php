@@ -285,7 +285,7 @@
                                     </span>
                                     @if(!$alert->resolved_at)
                                         <button class="btn btn-sm btn-outline-success"
-                                                onclick="resolveAlert({{ $alert->id }})">
+                                                onclick="resolveAlert('{{ $alert->id }}')">
                                             Resolve
                                         </button>
                                     @endif
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         title: function(context) {
                             const dataPoint = processedData[context[0].dataIndex];
                             // Format time according to browser's locale and timezone
-                            return dataPoint.time.toLocaleString('vi-VN', {
+                            return dataPoint.time.toLocaleString('en-US', {
                                 year: 'numeric',
                                 month: '2-digit',
                                 day: '2-digit',
@@ -450,7 +450,7 @@ function convertTimesToLocal() {
         const utcTime = element.getAttribute('data-utc');
         if (utcTime) {
             const localDate = new Date(utcTime);
-            element.textContent = localDate.toLocaleString('vi-VN', {
+            element.textContent = localDate.toLocaleString('en-US', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -467,7 +467,7 @@ function convertTimesToLocal() {
         const utcTime = element.getAttribute('data-utc');
         if (utcTime) {
             const localDate = new Date(utcTime);
-            element.textContent = localDate.toLocaleDateString('vi-VN', {
+            element.textContent = localDate.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
@@ -480,10 +480,10 @@ function convertTimesToLocal() {
         const utcTime = element.getAttribute('data-utc');
         if (utcTime) {
             const localDate = new Date(utcTime);
-            element.textContent = localDate.toLocaleDateString('vi-VN', {
+            element.textContent = localDate.toLocaleDateString('en-US', {
                 month: 'short',
                 day: '2-digit'
-            }) + ' ' + localDate.toLocaleTimeString('vi-VN', {
+            }) + ' ' + localDate.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: false
@@ -501,13 +501,13 @@ function convertTimesToLocal() {
 
             let relativeText;
             if (diffInSeconds < 60) {
-                relativeText = diffInSeconds + ' giây trước';
+                relativeText = diffInSeconds + ' seconds ago';
             } else if (diffInSeconds < 3600) {
-                relativeText = Math.floor(diffInSeconds / 60) + ' phút trước';
+                relativeText = Math.floor(diffInSeconds / 60) + ' minutes ago';
             } else if (diffInSeconds < 86400) {
-                relativeText = Math.floor(diffInSeconds / 3600) + ' giờ trước';
+                relativeText = Math.floor(diffInSeconds / 3600) + ' hours ago';
             } else {
-                relativeText = Math.floor(diffInSeconds / 86400) + ' ngày trước';
+                relativeText = Math.floor(diffInSeconds / 86400) + ' days ago';
             }
 
             element.textContent = relativeText;
@@ -525,13 +525,13 @@ function convertTimesToLocal() {
 
                 let relativeText;
                 if (diffInSeconds < 60) {
-                    relativeText = diffInSeconds + ' giây trước';
+                    relativeText = diffInSeconds + ' seconds ago';
                 } else if (diffInSeconds < 3600) {
-                    relativeText = Math.floor(diffInSeconds / 60) + ' phút trước';
+                    relativeText = Math.floor(diffInSeconds / 60) + ' minutes ago';
                 } else if (diffInSeconds < 86400) {
-                    relativeText = Math.floor(diffInSeconds / 3600) + ' giờ trước';
+                    relativeText = Math.floor(diffInSeconds / 3600) + ' hours ago';
                 } else {
-                    relativeText = Math.floor(diffInSeconds / 86400) + ' ngày trước';
+                    relativeText = Math.floor(diffInSeconds / 86400) + ' days ago';
                 }
 
                 element.textContent = relativeText;
@@ -544,6 +544,7 @@ function resolveAlert(alertId) {
     if (confirm('Are you sure you want to resolve this alert?')) {
         fetch(`/dashboard/alerts/${alertId}/resolve`, {
             method: 'POST',
+            body: JSON.stringify({ json: true }),
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')

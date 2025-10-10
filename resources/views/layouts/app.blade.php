@@ -61,6 +61,16 @@
             background-color: #dc3545;
             box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
         }
+        .status-critical {
+            background-color: #dc3545;
+            box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2); }
+            50% { box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.3); }
+            100% { box-shadow: 0 0 0 1px rgba(220, 53, 69, 0.2); }
+        }
         .status-offline,
         .status-no_processes {
             background-color: #6c757d;
@@ -178,11 +188,11 @@
             const now = new Date();
             const timeElement = document.querySelector('.local-time-header');
             if (timeElement) {
-                timeElement.textContent = now.toLocaleDateString('vi-VN', {
+                timeElement.textContent = now.toLocaleDateString('en-US', {
                     month: 'short',
                     day: '2-digit',
                     year: 'numeric'
-                }) + ' ' + now.toLocaleTimeString('vi-VN', {
+                }) + ' ' + now.toLocaleTimeString('en-US', {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: false

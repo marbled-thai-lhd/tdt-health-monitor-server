@@ -10,7 +10,7 @@
             <div class="card-body d-flex align-items-center">
                 <div class="flex-grow-1">
                     <h5 class="card-title text-muted mb-1">Total Servers</h5>
-                    <h3 class="mb-0">{{ $statistics['total_servers'] ?? 0 }}</h3>
+                    <h3 class="mb-0">{{ $statistics['servers']['total'] ?? 0 }}</h3>
                 </div>
                 <div class="text-primary">
                     <i class="fas fa-server fa-2x"></i>
@@ -24,7 +24,7 @@
             <div class="card-body d-flex align-items-center">
                 <div class="flex-grow-1">
                     <h5 class="card-title text-muted mb-1">OK Servers</h5>
-                    <h3 class="mb-0 text-success">{{ $statistics['ok_servers'] ?? 0 }}</h3>
+                    <h3 class="mb-0 text-success">{{ $statistics['servers']['ok_servers'] ?? 0 }}</h3>
                 </div>
                 <div class="text-success">
                     <i class="fas fa-check-circle fa-2x"></i>
@@ -37,8 +37,8 @@
         <div class="card card-stat border-0 shadow-sm">
             <div class="card-body d-flex align-items-center">
                 <div class="flex-grow-1">
-                    <h5 class="card-title text-muted mb-1">Critical Alerts</h5>
-                    <h3 class="mb-0 text-danger">{{ $alertStats['critical_count'] ?? 0 }}</h3>
+                    <h5 class="card-title text-muted mb-1">Unresolved Alerts</h5>
+                    <h3 class="mb-0 text-danger">{{ $alertStats['unresolved_alerts'] ?? 0 }}</h3>
                 </div>
                 <div class="text-danger">
                     <i class="fas fa-exclamation-triangle fa-2x"></i>
@@ -52,7 +52,7 @@
             <div class="card-body d-flex align-items-center">
                 <div class="flex-grow-1">
                     <h5 class="card-title text-muted mb-1">Offline Servers</h5>
-                    <h3 class="mb-0 text-secondary">{{ $statistics['offline_servers'] ?? 0 }}</h3>
+                    <h3 class="mb-0 text-secondary">{{ $statistics['servers']['offline'] ?? 0 }}</h3>
                 </div>
                 <div class="text-secondary">
                     <i class="fas fa-times-circle fa-2x"></i>
@@ -89,20 +89,20 @@
                 <a href="{{ route('dashboard.alerts') }}" class="btn btn-sm btn-outline-primary">View All</a>
             </div>
             <div class="card-body p-0">
-                @if($recentAlerts && $recentAlerts->count() > 0)
+                @if($recentAlerts && count($recentAlerts) > 0)
                     @foreach($recentAlerts as $alert)
-                        <div class="alert-item p-3 border-bottom alert-{{ $alert->severity }}">
+                        <div class="alert-item p-3 border-bottom alert-{{ $alert['severity'] }}">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-1">{{ $alert->server->name }}</h6>
-                                    <p class="mb-1 text-muted small">{{ $alert->message }}</p>
+                                    <h6 class="mb-1">{{ $alert['server_name'] }}</h6>
+                                    <p class="mb-1 text-muted small">{{ $alert['message'] }}</p>
                                     <small class="text-muted">
                                         <i class="fas fa-clock me-1"></i>
-                                        {{ $alert->created_at->diffForHumans() }}
+                                        {{ $alert['age'] }}
                                     </small>
                                 </div>
-                                <span class="badge bg-{{ $alert->severity === 'critical' ? 'danger' : 'warning' }}">
-                                    {{ ucfirst($alert->severity) }}
+                                <span class="badge bg-{{ $alert['severity'] === 'critical' ? 'danger' : 'warning' }}">
+                                    {{ ucfirst($alert['severity']) }}
                                 </span>
                             </div>
                         </div>
@@ -132,18 +132,18 @@
             <div class="card-body">
                 @if(isset($healthSummary) && count($healthSummary) > 0)
                     <div class="row">
-                        @foreach($healthSummary->take(6) as $server)
+                        @foreach(array_slice($healthSummary, 0, 6) as $server)
                             <div class="col-md-4 col-lg-2 mb-3">
                                 <div class="server-card card h-100">
                                     <div class="card-body text-center p-3">
-                                        <i class="fas fa-server fa-2x mb-2 text-{{ $server->status === 'ok' ? 'success' : ($server->status === 'offline' ? 'secondary' : 'warning') }}"></i>
-                                        <h6 class="card-title mb-1">{{ $server->name }}</h6>
-                                        <span class="badge status-badge status-{{ $server->status }}">
-                                            {{ ucfirst($server->status) }}
+                                        <i class="fas fa-server fa-2x mb-2 text-{{ $server['status'] === 'ok' ? 'success' : ($server['status'] === 'offline' ? 'secondary' : 'warning') }}"></i>
+                                        <h6 class="card-title mb-1">{{ $server['name'] }}</h6>
+                                        <span class="badge status-badge status-{{ $server['status'] }}">
+                                            {{ ucfirst($server['status']) }}
                                         </span>
-                                        @if($server->last_seen_at)
+                                        @if($server['last_seen_at'])
                                             <small class="d-block text-muted mt-2">
-                                                {{ $server->last_seen_at->diffForHumans() }}
+                                                {{ \Carbon\Carbon::parse($server['last_seen_at'])->diffForHumans() }}
                                             </small>
                                         @endif
                                     </div>
@@ -175,12 +175,16 @@ document.addEventListener('DOMContentLoaded', function() {
         ok: 0,
         warning: 0,
         error: 0,
+        critical: 0,
         offline: 0
     };
 
     healthData.forEach(server => {
         if (statusCounts.hasOwnProperty(server.status)) {
             statusCounts[server.status]++;
+        } else {
+            // Handle unexpected statuses by counting them as error
+            statusCounts['error']++;
         }
     });
 
@@ -192,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: [
                     statusCounts.ok,
                     statusCounts.warning,
-                    statusCounts.error,
+                    statusCounts.error || 0 + statusCounts.critical || 0,
                     statusCounts.offline
                 ],
                 backgroundColor: [
