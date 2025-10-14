@@ -8,12 +8,14 @@
         <h2 class="h4 mb-1">Server Management</h2>
         <p class="text-muted mb-0">Monitor and manage all your servers</p>
     </div>
+    @if(session('user.role') === 'admin')
     <div>
         <a href="{{ route('dashboard.servers.create') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>
             Add Server
         </a>
     </div>
+    @endif
 </div>
 
 @if($servers && $servers->count() > 0)
@@ -82,6 +84,7 @@
                                 <i class="fas fa-eye me-1"></i>
                                 View Details
                             </a>
+                            @if(session('user.role') === 'admin')
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
@@ -104,6 +107,7 @@
                                     </li>
                                 </ul>
                             </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -114,11 +118,13 @@
     <div class="text-center py-5">
         <i class="fas fa-server fa-4x text-muted mb-3"></i>
         <h4 class="text-muted mb-3">No servers found</h4>
+        @if(session('user.role') === 'admin')
         <p class="text-muted mb-4">Get started by adding your first server to monitor.</p>
         <a href="{{ route('dashboard.servers.create') }}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>
             Add Your First Server
         </a>
+        @endif
     </div>
 @endif
 

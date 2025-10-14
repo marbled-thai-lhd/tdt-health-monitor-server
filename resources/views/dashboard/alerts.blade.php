@@ -10,14 +10,16 @@
     </div>
     <div>
         <a href="{{ route('dashboard.alerts.export') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
-           class="btn btn-outline-primary me-2">
+           class="btn btn-outline-primary {{ session('user.role') === 'admin' ? 'me-2' : '' }}">
             <i class="fas fa-download me-1"></i>
             Export
         </a>
+        @if(session('user.role') === 'admin')
         <button class="btn btn-success" onclick="resolveAllAlerts()">
             <i class="fas fa-check-double me-1"></i>
             Resolve All
         </button>
+        @endif
     </div>
 </div>
 
@@ -142,9 +144,11 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light">
                         <tr>
+                            @if(session('user.role') === 'admin')
                             <th>
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
+                            @endif
                             <th>Server</th>
                             <th>Type</th>
                             <th>Message</th>
@@ -157,10 +161,12 @@
                     <tbody>
                         @foreach($alerts as $alert)
                             <tr>
+                                @if(session('user.role') === 'admin')
                                 <td>
                                     <input type="checkbox" class="form-check-input alert-checkbox"
                                            value="{{ $alert->id }}">
                                 </td>
+                                @endif
                                 <td>
                                     <a href="{{ route('dashboard.server-detail', $alert->server) }}"
                                        class="text-decoration-none">
@@ -201,7 +207,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if(!$alert->resolved_at)
+                                    @if(!$alert->resolved_at && session('user.role') === 'admin')
                                         <form method="POST"
                                               action="{{ route('dashboard.resolve-alert', $alert) }}"
                                               class="d-inline">
@@ -212,7 +218,7 @@
                                             </button>
                                         </form>
                                     @endif
-                                    <button class="btn btn-sm btn-outline-secondary ms-1"
+                                    <button class="btn btn-sm btn-outline-secondary {{ !$alert->resolved_at && session('user.role') === 'admin' ? 'ms-1' : '' }}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#alertDetailModal"
                                             onclick="showAlertDetail('{{ $alert->id }}')">
@@ -254,7 +260,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                @if(session('user.role') === 'admin')
                 <button type="button" class="btn btn-success" id="resolveModalBtn">Resolve Alert</button>
+                @endif
             </div>
         </div>
     </div>
@@ -263,6 +271,9 @@
 
 @push('scripts')
 <script>
+// User role from session
+const userRole = '{{ session("user.role") }}';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Convert UTC times to local timezone
     convertTimesToLocal();
@@ -457,11 +468,13 @@ function showAlertDetail(alertId) {
 
                 // Update the resolve button in modal footer
                 const resolveBtn = document.getElementById('resolveModalBtn');
-                if (resolvedDate) {
-                    resolveBtn.style.display = 'none';
-                } else {
-                    resolveBtn.style.display = 'inline-block';
-                    resolveBtn.onclick = () => resolveAlertFromModal(alert.id);
+                if (resolveBtn) {
+                    if (resolvedDate) {
+                        resolveBtn.style.display = 'none';
+                    } else {
+                        resolveBtn.style.display = 'inline-block';
+                        resolveBtn.onclick = () => resolveAlertFromModal(alert.id);
+                    }
                 }
 
             } else {
@@ -485,6 +498,12 @@ function showAlertDetail(alertId) {
 }
 
 function resolveAlertFromModal(alertId) {
+    // Check if user has permission
+    if (userRole !== 'admin') {
+        alert('You do not have permission to resolve alerts. Please contact an administrator.');
+        return;
+    }
+
     if (confirm('Are you sure you want to resolve this alert?')) {
         const resolveBtn = document.getElementById('resolveModalBtn');
         const originalText = resolveBtn.innerHTML;
@@ -525,6 +544,12 @@ function resolveAlertFromModal(alertId) {
 }
 
 function resolveAllAlerts() {
+    // Check if user has permission
+    if (userRole !== 'admin') {
+        alert('You do not have permission to resolve alerts. Please contact an administrator.');
+        return;
+    }
+
     if (confirm('Are you sure you want to resolve ALL unresolved alerts? This action cannot be undone.')) {
         const btn = event.target.closest('button');
         const originalText = btn.innerHTML;

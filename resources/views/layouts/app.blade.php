@@ -139,11 +139,13 @@
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Alerts
                         </a>
+                        @if(session('user.role') === 'admin')
                         <a class="nav-link {{ request()->routeIs('dashboard.servers.archived') ? 'active' : '' }}"
                            href="{{ route('dashboard.servers.archived') }}">
                             <i class="fas fa-archive me-2"></i>
                             Archives
                         </a>
+                        @endif
                     </nav>
                 </div>
             </div>
@@ -154,11 +156,47 @@
                     <!-- Header -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h1 class="h3 mb-0">@yield('title', 'Dashboard')</h1>
-                        <div class="text-muted">
-                            <i class="fas fa-clock me-1"></i>
-                            <span class="local-time-header" data-utc="{{ now()->toISOString() }}">
-                                {{ now()->format('M d, Y H:i') }}
-                            </span>
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- User Info -->
+                            @if(session('user'))
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-user-circle me-1"></i>
+                                        {{ session('user')['name'] }}
+                                        @if(session('user')['role'] === 'admin')
+                                            <span class="badge bg-danger ms-1">Admin</span>
+                                        @else
+                                            <span class="badge bg-info ms-1">Viewer</span>
+                                        @endif
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                        <li>
+                                            <span class="dropdown-item-text">
+                                                <strong>{{ session('user')['username'] }}</strong><br>
+                                                <small class="text-muted">{{ ucfirst(session('user')['role']) }}</small>
+                                            </span>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="{{ route('logout') }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-sign-out-alt me-2"></i>
+                                                    Logout
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <!-- Time -->
+                            <div class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                <span class="local-time-header" data-utc="{{ now()->toISOString() }}">
+                                    {{ now()->format('M d, Y H:i') }}
+                                </span>
+                            </div>
                         </div>
                     </div>
 

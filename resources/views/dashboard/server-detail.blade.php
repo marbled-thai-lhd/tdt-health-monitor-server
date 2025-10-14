@@ -18,6 +18,7 @@
             </span>
         </div>
     </div>
+    @if(session('user.role') === 'admin')
     <div>
         <a href="{{ route('dashboard.servers.edit', $server) }}" class="btn btn-outline-secondary me-2">
             <i class="fas fa-edit me-1"></i>
@@ -28,6 +29,7 @@
             Force Check
         </button>
     </div>
+    @endif
 </div>
 
 <!-- Server Info -->
