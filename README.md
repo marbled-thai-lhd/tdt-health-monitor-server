@@ -1,11 +1,22 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Health Monitor Server
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **⚠️ PROPRIETARY SOFTWARE - PERMISSION REQUIRED**  
+> This is proprietary software. All rights reserved.  
+> Usage, copying, modification, or distribution requires prior written permission from the copyright holder.
+
+## About This Project
+
+This is a centralized health monitoring server built with Laravel for tracking and managing the health status of multiple servers and applications.
+
+### Key Features
+
+- 📊 **Real-time Monitoring Dashboard**: Monitor all your servers from a single interface
+- 🔍 **Health Reports**: Track supervisor processes, cron jobs, and queue health
+- 💾 **Backup Management**: Monitor and manage automated database backups
+- 🚨 **Alert System**: Get notified when servers experience issues
+- 🔐 **Secure API**: HMAC-SHA256 authentication for all communications
+- 📈 **Historical Data**: View health trends over time
+- 🗄️ **Archive System**: Soft delete with recovery options
 
 ## About Laravel
 
@@ -58,4 +69,10 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This software is **proprietary** and is the exclusive property of the copyright holder. 
+
+**All rights reserved.** No part of this software may be used, copied, modified, distributed, or transmitted in any form or by any means without prior written permission from the owner.
+
+For licensing inquiries, please contact: duythai1912@gmail.com
+
+© 2025. All Rights Reserved.
