@@ -17,10 +17,8 @@ Route::middleware(['auth.check'])->group(function () {
 
     // Server routes (read-only for viewers)
     Route::get('/dashboard/servers', [DashboardController::class, 'servers'])->name('dashboard.servers');
-    Route::get('/dashboard/servers/{server}', [DashboardController::class, 'serverDetail'])->name('dashboard.server-detail');
-    Route::get('/dashboard/servers/{server}/backup/{filename}', [DashboardController::class, 'downloadBackup'])->name('dashboard.servers.backup.download');
 
-    // Server management routes (admin only)
+    // Server management routes (admin only) - MUST be before {server} parameter routes
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/dashboard/servers/create', [DashboardController::class, 'createServer'])->name('dashboard.servers.create');
         Route::post('/dashboard/servers', [DashboardController::class, 'storeServer'])->name('dashboard.servers.store');
@@ -30,6 +28,10 @@ Route::middleware(['auth.check'])->group(function () {
         Route::delete('/dashboard/servers/{server}', [DashboardController::class, 'deleteServer'])->name('dashboard.servers.delete');
         Route::post('/dashboard/servers/{server}/force-check', [DashboardController::class, 'forceHealthCheck'])->name('dashboard.servers.force-check');
     });
+
+    // Server detail routes (available for all authenticated users)
+    Route::get('/dashboard/servers/{server}', [DashboardController::class, 'serverDetail'])->name('dashboard.server-detail');
+    Route::get('/dashboard/servers/{server}/backup/{filename}', [DashboardController::class, 'downloadBackup'])->name('dashboard.servers.backup.download');
 
     // Soft delete management routes (admin only)
     Route::middleware(['role:admin'])->group(function () {
