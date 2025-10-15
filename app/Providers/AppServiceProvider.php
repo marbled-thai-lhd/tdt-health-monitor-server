@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Alert;
+use App\Observers\AlertObserver;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register Alert Observer for email notifications
+        Alert::observe(AlertObserver::class);
+
         // Register monitoring scheduled tasks
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
