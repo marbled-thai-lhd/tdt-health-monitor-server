@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Aws\S3\S3Client;
 use Exception;
 
 class DashboardController extends Controller
@@ -441,30 +442,43 @@ class DashboardController extends Controller
         try {
             // Find the backup report with this filename
             $backupReport = $server->backupReports()
-                ->whereJsonContains('backup_data->files', function ($query) use ($filename) {
-                    return $query->where('filename', $filename);
-                })
-                ->first();
+                ->get()
+                ->first(function ($report) use ($filename) {
+                    if (!isset($report->backup_data)) {
+                        return false;
+                    }
+                    
+                    $backupData = $report->backup_data;
+                    
+                    // Check if filename matches
+                    if (isset($backupData['s3_path'])) {
+                        $reportFilename = basename($backupData['s3_path']);
+                        return $reportFilename === $filename;
+                    } elseif (isset($backupData['file_path'])) {
+                        $reportFilename = basename($backupData['file_path']);
+                        return $reportFilename === $filename;
+                    }
+                    
+                    return false;
+                });
 
-            if (!$backupReport) {
+            if (!$backupReport || !isset($backupReport->backup_data)) {
                 abort(404, 'Backup file not found');
             }
 
-            // Get file info from backup data
-            $backupFiles = $backupReport->backup_data['files'] ?? [];
-            $fileInfo = collect($backupFiles)->firstWhere('filename', $filename);
+            $backupData = $backupReport->backup_data;
 
-            if (!$fileInfo) {
-                abort(404, 'File not found in backup data');
+            // Check if it's an S3 backup
+            if (isset($backupData['s3_bucket']) && isset($backupData['s3_path']) && isset($backupData['s3_url'])) {
+                return $this->downloadFromS3($backupData, $filename);
             }
 
-            // Check if file has download URL
-            if (empty($fileInfo['download_url'])) {
-                abort(404, 'Download URL not available for this file');
+            // Check if it's a local backup
+            if (isset($backupData['file_path']) && file_exists($backupData['file_path'])) {
+                return $this->downloadLocalFile($backupData['file_path'], $filename);
             }
 
-            // Redirect to the actual download URL
-            return redirect($fileInfo['download_url']);
+            abort(404, 'Backup file not accessible');
 
         } catch (\Exception $e) {
             Log::error('Backup download failed', [
@@ -475,6 +489,62 @@ class DashboardController extends Controller
 
             abort(500, 'Failed to download backup file');
         }
+    }
+
+    /**
+     * Download file from S3 using proper AWS SDK
+     */
+    private function downloadFromS3(array $backupData, string $filename)
+    {
+        try {
+            $s3Client = new S3Client([
+                'version' => 'latest',
+                'region' => $backupData['s3_region'] ?? config('filesystems.disks.s3.region', 'us-east-1'),
+                'credentials' => [
+                    'key' => config('filesystems.disks.s3.key'),
+                    'secret' => config('filesystems.disks.s3.secret'),
+                ],
+            ]);
+
+            // Get object from S3
+            $result = $s3Client->getObject([
+                'Bucket' => $backupData['s3_bucket'],
+                'Key' => $backupData['s3_path'],
+            ]);
+
+            // Stream the file to browser
+            return response()->stream(
+                function () use ($result) {
+                    echo $result['Body'];
+                },
+                200,
+                [
+                    'Content-Type' => 'application/octet-stream',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Content-Length' => $result['ContentLength'] ?? '',
+                ]
+            );
+
+        } catch (\Exception $e) {
+            Log::error('S3 download failed', [
+                'bucket' => $backupData['s3_bucket'],
+                'key' => $backupData['s3_path'],
+                'error' => $e->getMessage()
+            ]);
+            abort(500, 'Failed to download from S3: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download local file
+     */
+    private function downloadLocalFile(string $filePath, string $filename)
+    {
+        if (!file_exists($filePath)) {
+            abort(404, 'Local backup file not found');
+        }
+
+        return response()->download($filePath, $filename);
     }
 
     public function deleteServer(Request $request, Server $server): JsonResponse

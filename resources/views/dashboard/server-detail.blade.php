@@ -430,10 +430,9 @@
                                             </td>
                                             <td>
                                                 @if($file['download_url'])
-                                                    <a href="{{ $file['download_url'] }}"
+                                                    <a href="{{ route('dashboard.servers.backup.download', ['server' => $server->id, 'filename' => $file['filename']]) }}"
                                                        class="btn btn-sm btn-outline-primary"
-                                                       title="Download {{ $file['filename'] }}"
-                                                       download="{{ $file['filename'] }}">
+                                                       title="Download {{ $file['filename'] }}">
                                                         <i class="fas fa-download me-1"></i>
                                                         Download
                                                     </a>
