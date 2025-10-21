@@ -499,11 +499,9 @@ class DashboardController extends Controller
     {
         try {
             // Make API call to client server to get fresh download URL
-            $clientUrl = rtrim($server->api_endpoint ?? '', '/');
+            $clientUrl = rtrim($server->base_url ?? '', '/');
             if (!$clientUrl) {
-                // Fallback to constructing URL from server info
-                $protocol = 'https'; // or determine from server config
-                $clientUrl = "{$protocol}://{$server->ip_address}";
+                abort(503, 'Server base URL not configured');
             }
 
             $response = Http::timeout(30)
