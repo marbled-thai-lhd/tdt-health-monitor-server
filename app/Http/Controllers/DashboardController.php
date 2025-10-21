@@ -448,9 +448,9 @@ class DashboardController extends Controller
                     if (!isset($report->backup_data)) {
                         return false;
                     }
-                    
+
                     $backupData = $report->backup_data;
-                    
+
                     // Check if filename matches
                     if (isset($backupData['s3_path'])) {
                         $reportFilename = basename($backupData['s3_path']);
@@ -459,7 +459,7 @@ class DashboardController extends Controller
                         $reportFilename = basename($backupData['file_path']);
                         return $reportFilename === $filename;
                     }
-                    
+
                     return false;
                 });
 
