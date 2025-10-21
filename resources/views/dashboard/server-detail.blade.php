@@ -433,7 +433,7 @@
                                                     <a href="{{ $file['download_url'] }}"
                                                        class="btn btn-sm btn-outline-primary"
                                                        title="Download {{ $file['filename'] }}"
-                                                       target="_blank">
+                                                       download="{{ $file['filename'] }}">
                                                         <i class="fas fa-download me-1"></i>
                                                         Download
                                                     </a>
