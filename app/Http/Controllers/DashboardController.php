@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Aws\S3\S3Client;
 use Exception;
 
@@ -435,7 +436,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * Download backup file from server
+     * Generate temporary download link for backup file
      */
     public function downloadBackup(Server $server, string $filename)
     {
@@ -468,14 +469,14 @@ class DashboardController extends Controller
 
             $backupData = $backupReport->backup_data;
 
-            // Check if it's an S3 backup
-            if (isset($backupData['s3_bucket']) && isset($backupData['s3_path']) && isset($backupData['s3_url'])) {
-                return $this->downloadFromS3($backupData, $filename);
-            }
-
             // Check if it's a local backup
             if (isset($backupData['file_path']) && file_exists($backupData['file_path'])) {
-                return $this->downloadLocalFile($backupData['file_path'], $filename);
+                return response()->download($backupData['file_path'], $filename);
+            }
+
+            // For S3 backups, request a fresh download URL from the client server
+            if (isset($backupData['s3_bucket']) && isset($backupData['s3_path'])) {
+                return $this->requestDownloadFromServer($server, $filename, $backupData);
             }
 
             abort(404, 'Backup file not accessible');
@@ -492,62 +493,58 @@ class DashboardController extends Controller
     }
 
     /**
-     * Download file from S3 using proper AWS SDK
+     * Request download URL from client server
      */
-    private function downloadFromS3(array $backupData, string $filename)
+    private function requestDownloadFromServer(Server $server, string $filename, array $backupData)
     {
         try {
-            $s3Client = new S3Client([
-                'version' => 'latest',
-                'region' => $backupData['s3_region'] ?? config('filesystems.disks.s3.region', 'us-east-1'),
-                'credentials' => [
-                    'key' => config('filesystems.disks.s3.key'),
-                    'secret' => config('filesystems.disks.s3.secret'),
-                ],
+            // Make API call to client server to get fresh download URL
+            $clientUrl = rtrim($server->api_endpoint ?? '', '/');
+            if (!$clientUrl) {
+                // Fallback to constructing URL from server info
+                $protocol = 'https'; // or determine from server config
+                $clientUrl = "{$protocol}://{$server->ip_address}";
+            }
+
+            $response = Http::timeout(30)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . ($server->api_key ?? ''),
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$clientUrl}/api/backup/download-url", [
+                    'filename' => $filename,
+                    's3_bucket' => $backupData['s3_bucket'],
+                    's3_path' => $backupData['s3_path'],
+                    'expires_in' => 300, // 5 minutes
+                ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                if (isset($data['download_url'])) {
+                    // Redirect to the fresh pre-signed URL
+                    return redirect($data['download_url']);
+                }
+            }
+
+            Log::warning('Failed to get download URL from server', [
+                'server_id' => $server->id,
+                'filename' => $filename,
+                'response_status' => $response->status(),
+                'response_body' => $response->body(),
             ]);
 
-            // Get object from S3
-            $result = $s3Client->getObject([
-                'Bucket' => $backupData['s3_bucket'],
-                'Key' => $backupData['s3_path'],
-            ]);
-
-            // Stream the file to browser
-            return response()->stream(
-                function () use ($result) {
-                    echo $result['Body'];
-                },
-                200,
-                [
-                    'Content-Type' => 'application/octet-stream',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                    'Content-Length' => $result['ContentLength'] ?? '',
-                ]
-            );
+            abort(503, 'Unable to generate download link. Please try again later.');
 
         } catch (\Exception $e) {
-            Log::error('S3 download failed', [
-                'bucket' => $backupData['s3_bucket'],
-                'key' => $backupData['s3_path'],
+            Log::error('Failed to request download URL from server', [
+                'server_id' => $server->id,
+                'filename' => $filename,
                 'error' => $e->getMessage()
             ]);
-            abort(500, 'Failed to download from S3: ' . $e->getMessage());
+
+            abort(503, 'Service temporarily unavailable');
         }
-    }
-
-    /**
-     * Download local file
-     */
-    private function downloadLocalFile(string $filePath, string $filename)
-    {
-        if (!file_exists($filePath)) {
-            abort(404, 'Local backup file not found');
-        }
-
-        return response()->download($filePath, $filename);
-    }
-
-    public function deleteServer(Request $request, Server $server): JsonResponse
+    }    public function deleteServer(Request $request, Server $server): JsonResponse
     {
         try {
             // Soft delete server (giữ lại tất cả dữ liệu liên quan)
